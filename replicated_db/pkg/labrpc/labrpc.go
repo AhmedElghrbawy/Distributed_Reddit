@@ -59,7 +59,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"../labgob"
+	"github.com/ahmedelghrbawy/replicated_db/pkg/labgob"
 )
 
 type reqMsg struct {

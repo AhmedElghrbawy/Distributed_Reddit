@@ -1,0 +1,51 @@
+syntax = "proto3";
+package raft_grpc;
+
+option go_package = "github.com/ahmedelghrbawy/replicated_db/pkg/raft_grpc";
+
+
+message LogEntry {
+    bytes command = 1;
+    int32 term = 2;
+    int32 index = 3;
+}
+
+
+message RequestVoteArgs {
+    int32 term = 1;
+    int32 candidate_id = 2;
+    int32 last_log_index = 3;
+    int32 last_log_term = 4;
+}
+
+
+message RequestVoteReply {
+    int32 term = 1;
+    bool vote_granted = 2;
+}
+
+
+message AppendEntriesArgs {
+    int32 term = 1;
+    int32 leader_id = 2;
+    int32 prev_log_index = 3;
+    int32 prev_log_term = 4;
+    repeated LogEntry entries = 5;
+    int32 leader_commit = 6;
+    bool is_heartbeat = 7;
+}
+
+message AppendEntriesReply {
+    int32 term = 1;
+    bool success = 2;
+    int32 xTerm = 3;
+    int32 xIndex = 4;
+    int32 xLen = 5;
+}
+
+
+
+service RaftGRPC {
+    rpc RequestVote (RequestVoteArgs) returns (RequestVoteReply);
+    rpc AppendEntries (AppendEntriesArgs) returns (AppendEntriesReply);
+}

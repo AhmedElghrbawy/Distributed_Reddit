@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net"
 	"net/netip"
 	"sort"
 	"sync"
@@ -135,6 +136,22 @@ func Make(peerAdresses []netip.AddrPort, me int,
 	rf.commitIndex = 0
 	rf.lastApplied = 0
 	rf.nextIndex = make([]int, len(rf.peers))
+
+	lis, err := net.Listen("tcp", peerAdresses[me].String())
+
+	grpc_server := grpc.NewServer()
+	pb.RegisterRaftGRPCServer(grpc_server, rf)
+
+	go func() {
+		if err := grpc_server.Serve(lis); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+		}
+
+	}()
+
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
 
 	for i, peerAddress := range peerAdresses {
 		if i == me {

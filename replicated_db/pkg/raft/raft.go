@@ -27,6 +27,7 @@ import (
 
 	"github.com/ahmedelghrbawy/replicated_db/pkg/labrpc"
 	"github.com/ahmedelghrbawy/replicated_db/pkg/persister"
+	pb "github.com/ahmedelghrbawy/replicated_db/pkg/raft_grpc"
 )
 
 // import "bytes"
@@ -45,12 +46,12 @@ ApplyMsg, but set CommandValid to false for these other uses.
 */
 type ApplyMsg struct {
 	CommandValid bool
-	Command      interface{}
+	Command      []byte
 	CommandIndex int
 }
 
 type logEntry struct {
-	Command interface{}
+	Command []byte
 	Term    int
 	Index   int
 }
@@ -79,6 +80,8 @@ type Raft struct {
 	// Your data here (2A, 2B, 2C).
 	// Look at the paper's Figure 2 for a description of what
 	// state a Raft server must maintain.
+
+	pb.UnimplementedRaftGRPCServer
 
 	// needs to be locked
 	state           state
@@ -123,7 +126,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.votedFor = -1
 	rf.lastRpcTime = time.Now()
 	rf.log = []logEntry{logEntry{
-		Command: "Dummy command",
+		Command: make([]byte, 0),
 		Index:   0,
 		Term:    -1,
 	}}
@@ -191,7 +194,7 @@ if it's ever committed. the second return value is the current
 term. the third return value is true if this server believes it is
 the leader.
 */
-func (rf *Raft) Start(command interface{}) (int, int, bool) {
+func (rf *Raft) Start(command []byte) (int, int, bool) {
 	// Your code here (2B).
 
 	rf.mu.Lock()

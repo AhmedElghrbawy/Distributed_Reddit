@@ -25,7 +25,7 @@ func (rf *Raft) RequestVote(ctx context.Context, args *pb.RequestVoteArgs) (*pb.
 		// Debug(dElection, "S%d updataing term from %d to %d after getting RV from %d.\n", rf.me, rf.currentTerm, args.Term, args.CandidateId)
 		revertToFollower(rf, int(args.Term), -1)
 	}
-	
+
 	reply.Term = int32(rf.currentTerm)
 	reply.VoteGranted = false
 
@@ -48,7 +48,7 @@ func (rf *Raft) RequestVote(ctx context.Context, args *pb.RequestVoteArgs) (*pb.
 
 		} else {
 			// Debug(dDrop, "S%d rejecting RV. Election restrection. my log length is larger. me: %s, args: %s\n", rf.me, rf, args)
-		} 
+		}
 	} else {
 		// Debug(dElection, "S%d already voted for S%d. droping RV from S%d in term: %d. or there exists a leader. leaderId: %d\n", rf.me, rf.votedFor, args.CandidateId, rf.currentTerm, rf.leaderId)
 	}
@@ -56,14 +56,11 @@ func (rf *Raft) RequestVote(ctx context.Context, args *pb.RequestVoteArgs) (*pb.
 	return reply, nil
 }
 
-
-
 func (rf *Raft) AppendEntries(ctx context.Context, args *pb.AppendEntriesArgs) (*pb.AppendEntriesReply, error) {
 	reply := &pb.AppendEntriesReply{}
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	
 	if rf.currentTerm > int(args.Term) {
 		reply.Term = int32(rf.currentTerm)
 		reply.Success = false
@@ -124,12 +121,12 @@ func (rf *Raft) AppendEntries(ctx context.Context, args *pb.AppendEntriesArgs) (
 	for i, entry := range args.Entries {
 		if int(entry.Index) < len(rf.log) {
 			if rf.log[entry.Index].Term != int(entry.Term) {
-				rf.log = append(rf.log[:entry.Index], rf.MapGrpcEntries(args.Entries)[i:]...)
+				rf.log = append(rf.log[:entry.Index], MapGrpcEntriesToRaftEntries(args.Entries)[i:]...)
 				rf.persist()
 				break
 			}
 		} else {
-			rf.log = append(rf.log, rf.MapGrpcEntries(args.Entries)[i:]...)
+			rf.log = append(rf.log, MapGrpcEntriesToRaftEntries(args.Entries)[i:]...)
 			rf.persist()
 			break
 		}
@@ -148,19 +145,4 @@ func (rf *Raft) AppendEntries(ctx context.Context, args *pb.AppendEntriesArgs) (
 		go ApplySafeEntries(rf)
 	}
 	return reply, nil
-}
-
-
-func (rf *Raft) MapGrpcEntries(src []*pb.LogEntry) ([]logEntry) {
-	result := make([]logEntry, 0)
-
-	for _, entry := range src {
-		result = append(result, logEntry{
-			Command: entry.Command,
-			Term: int(entry.Term),
-			Index: int(entry.Index),
-		})
-	}
-
-	return result
 }

@@ -1,5 +1,7 @@
 package raft
 
+import pb "github.com/ahmedelghrbawy/replicated_db/pkg/raft_grpc"
+
 func repeatRequestVote(server int, rf *Raft, rpcTerm int) {
 	rf.mu.Lock()
 
@@ -8,38 +10,32 @@ func repeatRequestVote(server int, rf *Raft, rpcTerm int) {
 		rf.mu.Unlock()
 		return
 	}
-	rvargs := RequestVoteArgs{
-		Term:         rf.currentTerm,
-		CandidateId:  rf.me,
-		LastLogIndex: len(rf.log) - 1,
-		LastLogTerm:  rf.log[len(rf.log)-1].Term,
+	rvargs := pb.RequestVoteArgs{
+		Term:         int32(rf.currentTerm),
+		CandidateId:  int32(rf.me),
+		LastLogIndex: int32(len(rf.log) - 1),
+		LastLogTerm:  int32(rf.log[len(rf.log)-1].Term),
 	}
-	rvreply := RequestVoteReply{}
 
 	// Debug(dVote, "S%d is sending RV to %d. Term: %d, state: %s, args: %s\n", rf.me, server, rf.currentTerm, rf.state, rvargs)
 	rf.mu.Unlock()
 
 	for {
-		if rf.killed() {
-			return
-		}
-		res := rf.sendRequestVote(server, &rvargs, &rvreply)
 
-		if rf.killed() {
-			return
-		}
-		if !res {
+		rvreply, err := rf.sendRequestVote(server, &rvargs)
+
+		if err != nil {
 			continue
 		}
 
 		rf.mu.Lock()
 		defer rf.mu.Unlock()
 
-		if rvreply.Term > rf.currentTerm {
-			revertToFollower(rf, rvreply.Term, -1)
+		if int(rvreply.Term) > rf.currentTerm {
+			revertToFollower(rf, int(rvreply.Term), -1)
 			return
 		}
-		if rvargs.Term < rf.currentTerm {
+		if int(rvargs.Term) < rf.currentTerm {
 			// this request is outdated
 			return
 		}
@@ -55,20 +51,18 @@ func repeatRequestVote(server int, rf *Raft, rpcTerm int) {
 				// send hearbeat immeditaly
 				for i := 0; i < len(rf.peers); i++ {
 					if i != rf.me {
-						appendArgs := AppendEntriesArgs{
-							Term:         rf.currentTerm,
-							LeaderId:     rf.me,
-							PrevLogIndex: len(rf.log) - 1,
-							PrevLogTerm:  rf.log[len(rf.log)-1].Term,
-							Entries:      make([]logEntry, 0),
-							LeaderCommit: rf.commitIndex,
-							IsHertbeat:   true,
+						appendArgs := pb.AppendEntriesArgs{
+							Term:         int32(rf.currentTerm),
+							LeaderId:     int32(rf.me),
+							PrevLogIndex: int32(len(rf.log) - 1),
+							PrevLogTerm:  int32(rf.log[len(rf.log)-1].Term),
+							Entries:      MapRaftEntriestoGrpcEntries(make([]logEntry, 0)),
+							LeaderCommit: int32(rf.commitIndex),
+							IsHeartbeat:  true,
 						}
 
-						appendReply := AppendEntriesReply{}
-
 						// !! need to make sure hearbeats are sent immeditally after winning an election
-						go rf.sendAppendEntries(i, &appendArgs, &appendReply)
+						go rf.sendAppendEntries(i, &appendArgs)
 					}
 				}
 				go heartbeat(rf)
@@ -99,19 +93,14 @@ func repeatRequestVote(server int, rf *Raft, rpcTerm int) {
 	}
 }
 
-func repeatAppendEntries(server int, rf *Raft, args *AppendEntriesArgs, reply *AppendEntriesReply) {
+func repeatAppendEntries(server int, rf *Raft, args *pb.AppendEntriesArgs) {
 
 	for {
-		if rf.killed() {
-			return
-		}
 		rf.mu.Lock()
-		if rf.killed() {
-			return
-		}
+
 
 		// should also check if we are the leader for current term, maybe not
-		if rf.currentTerm > args.Term {
+		if rf.currentTerm > int(args.Term) {
 			// This go routine is outdated.
 			rf.mu.Unlock()
 			return
@@ -123,31 +112,31 @@ func repeatAppendEntries(server int, rf *Raft, args *AppendEntriesArgs, reply *A
 
 		rf.mu.Unlock()
 
-		res := rf.sendAppendEntries(server, args, reply)
+		reply, err := rf.sendAppendEntries(server, args)
 		if rf.killed() {
 			return
 		}
 
-		if !res && args.IsHertbeat {
+		if err != nil && args.IsHeartbeat {
 			return
-		} else if !res {
+		} else if err != nil {
 			continue
 		}
 
 		rf.mu.Lock()
-		if reply.Term > rf.currentTerm {
-			revertToFollower(rf, reply.Term, -1)
+		if int(reply.Term) > rf.currentTerm {
+			revertToFollower(rf, int(reply.Term), -1)
 			rf.mu.Unlock()
 			return
 		}
-		if args.Term < rf.currentTerm {
+		if int(args.Term) < rf.currentTerm {
 			// this request is outdated
 			// Debug(dDrop, "S%d Ignore sending outdated rpc. currentTerm: %d, rpcTerm: %d\n", rf.me, rf.currentTerm, args.Term)
 			rf.mu.Unlock()
 			return
 		}
 
-		if args.IsHertbeat {
+		if args.IsHeartbeat {
 			if !reply.Success {
 				// Debug(dNotify, "S%d detected mismatching log for peer %d while sending heartbeats. me: %s, args: %s\n", rf.me, server, rf, args)
 				go func(server int) {
@@ -166,31 +155,31 @@ func repeatAppendEntries(server int, rf *Raft, args *AppendEntriesArgs, reply *A
 
 			if reply.XTerm == -1 {
 				// Debug(dLog2, "S%d follower's log is too short\n", rf.me)
-				rf.nextIndex[server] = reply.XLen
+				rf.nextIndex[server] = int(reply.XLen)
 			} else {
 				xTermLastIndex := -1
 
 				for i, entry := range rf.log {
-					if entry.Term == reply.XTerm {
+					if entry.Term == int(reply.XTerm) {
 						xTermLastIndex = i
-					} else if entry.Term > reply.XTerm {
+					} else if entry.Term > int(reply.XTerm) {
 						break
 					}
 				}
 
 				if xTermLastIndex == -1 {
 					// Debug(dLog2, "S%d no entry with xterm\n", rf.me)
-					rf.nextIndex[server] = reply.XIndex
+					rf.nextIndex[server] = int(reply.XIndex)
 				} else {
 					rf.nextIndex[server] = xTermLastIndex
 				}
 
 			}
 
-			args.Entries = rf.log[rf.nextIndex[server]:]
-			args.PrevLogIndex = rf.nextIndex[server] - 1
-			args.PrevLogTerm = rf.log[args.PrevLogIndex].Term
-			args.LeaderCommit = rf.commitIndex
+			args.Entries = MapRaftEntriestoGrpcEntries(rf.log[rf.nextIndex[server]:])
+			args.PrevLogIndex = int32(rf.nextIndex[server] - 1)
+			args.PrevLogTerm = int32(rf.log[args.PrevLogIndex].Term)
+			args.LeaderCommit = int32(rf.commitIndex)
 			// args.Term = rf.currentTerm
 			// Debug(dLog, "S%d AE request to %d failed due to consistency check. Decremented nextIndex. me: %s, args: %s\n", rf.me, server, rf, args)
 			rf.mu.Unlock()

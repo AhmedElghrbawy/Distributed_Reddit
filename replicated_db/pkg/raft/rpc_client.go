@@ -1,5 +1,13 @@
 package raft
 
+import (
+	"context"
+	"log"
+	"time"
+
+	pb "github.com/ahmedelghrbawy/replicated_db/pkg/raft_grpc"
+)
+
 /*
  example code to send a RequestVote RPC to a server.
  server is the index of the target server in rf.peers[].
@@ -29,14 +37,36 @@ package raft
  that the caller passes the address of the reply struct with &, not
  the struct itself.
 */
+
+const DurationTO = 5 * time.Second
+
 // ? this methods sends a request vote rpc
-func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *RequestVoteReply) bool {
-	ok := rf.peers[server].Call("Raft.RequestVote", args, reply)
-	return ok
+func (rf *Raft) sendRequestVote(server int, args *pb.RequestVoteArgs) (*pb.RequestVoteReply, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), DurationTO)
+	defer cancel()
+
+	reply, err := rf.peers[server].RequestVote(ctx, args)
+
+	if err != nil {
+		log.Printf("couldn't send request vote %v\n", err)
+		return nil, err
+	}
+
+
+	return reply, nil
 }
 
-func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {
+func (rf *Raft) sendAppendEntries(server int, args *pb.AppendEntriesArgs) (*pb.AppendEntriesReply, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), DurationTO)
+	defer cancel()
+
+	reply, err := rf.peers[server].AppendEntries(ctx, args)
+
+	if err != nil {
+		log.Printf("couldn't send request append entries %v\n", err)
+		return nil, err
+	}
+
 	// Debug(dLeader, "S%d sending append entries to: %d, args: %s\n", rf.me, server, args)
-	ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
-	return ok
+	return reply, nil
 }

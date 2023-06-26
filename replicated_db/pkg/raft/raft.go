@@ -19,15 +19,18 @@ package raft
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
+	"net/netip"
 	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/ahmedelghrbawy/replicated_db/pkg/labrpc"
 	"github.com/ahmedelghrbawy/replicated_db/pkg/persister"
 	pb "github.com/ahmedelghrbawy/replicated_db/pkg/raft_grpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // import "bytes"
@@ -72,7 +75,7 @@ const (
 // A Go object implementing a single Raft peer.
 type Raft struct {
 	mu        sync.Mutex           // Lock to protect shared access to this peer's state
-	peers     []*labrpc.ClientEnd  // RPC end points of all peers
+	peers     []pb.RaftGRPCClient  // RPC end points of all peers
 	persister *persister.Persister // Object to hold this peer's persisted state
 	me        int                  // this peer's index into peers[]
 	dead      int32                // set by Kill()
@@ -114,10 +117,9 @@ persister is a place for this server to save its persistent state, and also init
 applyCh is a channel on which the tester or service expects Raft to send ApplyMsg messages.
 Make() must return quickly, so it should start goroutines for any long-running work.
 */
-func Make(peers []*labrpc.ClientEnd, me int,
+func Make(peerAdresses []netip.AddrPort, me int,
 	persister *persister.Persister, applyCh chan ApplyMsg) *Raft {
 	rf := &Raft{}
-	rf.peers = peers
 	rf.persister = persister
 	rf.me = me
 	rf.applyCh = applyCh
@@ -134,7 +136,23 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.lastApplied = 0
 	rf.nextIndex = make([]int, len(rf.peers))
 
-	for i := 0; i < len(peers); i++ {
+	for i, peerAddress := range peerAdresses {
+		if i == me {
+			continue
+		}
+		// TODO: need to clean up these connections somewhere, maybe send a cancellation signal from the application layer
+		conn, err := grpc.Dial(peerAddress.String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			log.Fatalf("unable to initialize a client : %v", err)
+		}
+		// defer conn.Close()
+
+		client := pb.NewRaftGRPCClient(conn)
+
+		rf.peers[i] = client
+	}
+
+	for i := 0; i < len(rf.peers); i++ {
 		rf.nextIndex[i] = 1
 	}
 
@@ -146,7 +164,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 
 	// each peer will have a long running notifier go routine that waits to be notified of a new command or a won ellection and starts sending append entries to this peer
 	// this helps avoiding inconsistencies
-	for i := 0; i < len(peers); i++ {
+	for i := 0; i < len(rf.peers); i++ {
 		rf.appendNotifiers = append(rf.appendNotifiers, make(chan struct{}))
 		if i == rf.me {
 			continue
@@ -376,20 +394,19 @@ func appendEntriesController(rf *Raft, peer int, notifier chan struct{}) {
 		// 	return
 		// }
 		// Debug(dLog, "S%d notified of new entries to replicate to S%d. term: %d, log: %v, nextIndex[%d]: %d\n", rf.me, peer, rf.currentTerm, rf.log, peer, rf.nextIndex[peer])
-		args := AppendEntriesArgs{
-			Term:         rf.currentTerm,
-			LeaderId:     rf.me,
-			PrevLogIndex: rf.nextIndex[peer] - 1,
-			PrevLogTerm:  rf.log[rf.nextIndex[peer]-1].Term,
-			Entries:      rf.log[rf.nextIndex[peer]:],
-			LeaderCommit: rf.commitIndex,
-			IsHertbeat:   false,
+		args := pb.AppendEntriesArgs{
+			Term:         int32(rf.currentTerm),
+			LeaderId:     int32(rf.me),
+			PrevLogIndex: int32(rf.nextIndex[peer] - 1),
+			PrevLogTerm:  int32(rf.log[rf.nextIndex[peer]-1].Term),
+			Entries:      MapRaftEntriestoGrpcEntries(rf.log[rf.nextIndex[peer]:]),
+			LeaderCommit: int32(rf.commitIndex),
+			IsHeartbeat:  false,
 		}
 
-		reply := AppendEntriesReply{}
 		rf.mu.Unlock()
 
-		repeatAppendEntries(peer, rf, &args, &reply)
+		repeatAppendEntries(peer, rf, &args)
 	}
 }
 
@@ -411,20 +428,18 @@ func heartbeat(rf *Raft) {
 		// Debug(dLeader, "S%d is sending heartbeats in term %d. state: %s\n", rf.me, rf.currentTerm, rf.state)
 		for i := 0; i < len(rf.peers); i++ {
 			if i != rf.me {
-				appendArgs := AppendEntriesArgs{
-					Term:         rf.currentTerm,
-					LeaderId:     rf.me,
-					PrevLogIndex: len(rf.log) - 1,
-					PrevLogTerm:  rf.log[len(rf.log)-1].Term,
-					Entries:      make([]logEntry, 0),
-					LeaderCommit: rf.commitIndex,
-					IsHertbeat:   true,
+				appendArgs := pb.AppendEntriesArgs{
+					Term:         int32(rf.currentTerm),
+					LeaderId:     int32(rf.me),
+					PrevLogIndex: int32(len(rf.log) - 1),
+					PrevLogTerm:  int32(rf.log[len(rf.log)-1].Term),
+					Entries:      MapRaftEntriestoGrpcEntries(make([]logEntry, 0)),
+					LeaderCommit: int32(rf.commitIndex),
+					IsHeartbeat:  true,
 				}
 
-				appendReply := AppendEntriesReply{}
-
 				// !! need to make sure hearbeats are sent immeditally after winning an election
-				go repeatAppendEntries(i, rf, &appendArgs, &appendReply)
+				go repeatAppendEntries(i, rf, &appendArgs)
 			}
 		}
 		rf.mu.Unlock()

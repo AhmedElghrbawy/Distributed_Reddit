@@ -1,12 +1,16 @@
 package raft
 
-import pb "github.com/ahmedelghrbawy/replicated_db/pkg/raft_grpc"
+import (
+	"github.com/ahmedelghrbawy/replicated_db/pkg/logger"
+	pb "github.com/ahmedelghrbawy/replicated_db/pkg/raft_grpc"
+)
 
 func repeatRequestVote(server int, rf *Raft, rpcTerm int) {
 	rf.mu.Lock()
 
 	if rf.currentTerm > rpcTerm {
-		// ? This go routine is outdated. we are now in a different term than when this go routine was created check Rule number 5 in "advice about locks"
+		// ? This go routine is outdated.
+		// we are now in a different term than when this go routine was created
 		rf.mu.Unlock()
 		return
 	}
@@ -17,7 +21,7 @@ func repeatRequestVote(server int, rf *Raft, rpcTerm int) {
 		LastLogTerm:  int32(rf.log[len(rf.log)-1].Term),
 	}
 
-	// Debug(dVote, "S%d is sending RV to %d. Term: %d, state: %s, args: %s\n", rf.me, server, rf.currentTerm, rf.state, rvargs)
+	logger.Debug(logger.DVote, "S%d is sending RV to %d. Term: %d, state: %s, args: %s\n", rf.me, server, rf.currentTerm, rf.state, &rvargs)
 	rf.mu.Unlock()
 
 	for {
@@ -42,11 +46,9 @@ func repeatRequestVote(server int, rf *Raft, rpcTerm int) {
 
 		if rvreply.VoteGranted {
 			rf.votesReceived++
-			// DPrintf("Vote is granted for peer %d from peer %d in term %d. votesReceived = %d\n", rf.me, server, rf.currentTerm, rf.votesReceived)
-			// Debug(dVote, "S%d Got vote from peer %d. Term = %d, votesReceived = %d\n", rf.me, server, rf.currentTerm, rf.votesReceived)
+			logger.Debug(logger.DVote, "S%d Got vote from peer %d. Term = %d, votesReceived = %d\n", rf.me, server, rf.currentTerm, rf.votesReceived)
 			if rf.votesReceived == len(rf.peers)/2+1 {
-				// DPrintf("Peer %d got a majority for term %d\n", rf.me, rf.currentTerm)
-				// Debug(dLeader, "S%d got a majority for term = %d. Designating as leader...\n", rf.me, rf.currentTerm)
+				logger.Debug(logger.DLeader, "S%d got a majority for term = %d. Designating as leader...\n", rf.me, rf.currentTerm)
 
 				// send hearbeat immeditaly
 				for i := 0; i < len(rf.peers); i++ {
@@ -98,8 +100,6 @@ func repeatAppendEntries(server int, rf *Raft, args *pb.AppendEntriesArgs) {
 	for {
 		rf.mu.Lock()
 
-
-		// should also check if we are the leader for current term, maybe not
 		if rf.currentTerm > int(args.Term) {
 			// This go routine is outdated.
 			rf.mu.Unlock()
@@ -107,15 +107,12 @@ func repeatAppendEntries(server int, rf *Raft, args *pb.AppendEntriesArgs) {
 		}
 
 		if rf.leaderId != rf.me || rf.state != leader {
-			// Debug(dError, "S%d sending AE while not the leader. term: %d, leaderId: %d\n", rf.me, rf.currentTerm, rf.leaderId)
+			logger.Debug(logger.DError, "S%d sending AE while not the leader. term: %d, leaderId: %d\n", rf.me, rf.currentTerm, rf.leaderId)
 		}
 
 		rf.mu.Unlock()
 
 		reply, err := rf.sendAppendEntries(server, args)
-		if rf.killed() {
-			return
-		}
 
 		if err != nil && args.IsHeartbeat {
 			return
@@ -131,14 +128,14 @@ func repeatAppendEntries(server int, rf *Raft, args *pb.AppendEntriesArgs) {
 		}
 		if int(args.Term) < rf.currentTerm {
 			// this request is outdated
-			// Debug(dDrop, "S%d Ignore sending outdated rpc. currentTerm: %d, rpcTerm: %d\n", rf.me, rf.currentTerm, args.Term)
+			// logger.Debug(logger.DDrop, "S%d Ignore sending outdated rpc. currentTerm: %d, rpcTerm: %d\n", rf.me, rf.currentTerm, args.Term)
 			rf.mu.Unlock()
 			return
 		}
 
 		if args.IsHeartbeat {
 			if !reply.Success {
-				// Debug(dNotify, "S%d detected mismatching log for peer %d while sending heartbeats. me: %s, args: %s\n", rf.me, server, rf, args)
+				// logger.Debug(logger.DNotify, "S%d detected mismatching log for peer %d while sending heartbeats. me: %s, args: %s\n", rf.me, server, rf, args)
 				go func(server int) {
 					select {
 					case rf.appendNotifiers[server] <- struct{}{}:
@@ -154,7 +151,7 @@ func repeatAppendEntries(server int, rf *Raft, args *pb.AppendEntriesArgs) {
 			// rf.nextIndex[server]--
 
 			if reply.XTerm == -1 {
-				// Debug(dLog2, "S%d follower's log is too short\n", rf.me)
+				// logger.Debug(logger.DLog2, "S%d follower's log is too short\n", rf.me)
 				rf.nextIndex[server] = int(reply.XLen)
 			} else {
 				xTermLastIndex := -1
@@ -168,7 +165,7 @@ func repeatAppendEntries(server int, rf *Raft, args *pb.AppendEntriesArgs) {
 				}
 
 				if xTermLastIndex == -1 {
-					// Debug(dLog2, "S%d no entry with xterm\n", rf.me)
+					// logger.Debug(logger.DLog2, "S%d no entry with xterm\n", rf.me)
 					rf.nextIndex[server] = int(reply.XIndex)
 				} else {
 					rf.nextIndex[server] = xTermLastIndex
@@ -181,15 +178,15 @@ func repeatAppendEntries(server int, rf *Raft, args *pb.AppendEntriesArgs) {
 			args.PrevLogTerm = int32(rf.log[args.PrevLogIndex].Term)
 			args.LeaderCommit = int32(rf.commitIndex)
 			// args.Term = rf.currentTerm
-			// Debug(dLog, "S%d AE request to %d failed due to consistency check. Decremented nextIndex. me: %s, args: %s\n", rf.me, server, rf, args)
+			logger.Debug(logger.DLog, "S%d AE request to %d failed due to consistency check. Decremented nextIndex. me: %s, args: %s\n", rf.me, server, rf, args)
 			rf.mu.Unlock()
 			continue
 		}
 
 		rf.nextIndex[server] = rf.nextIndex[server] + len(args.Entries)
 		rf.matchIndex[server] = rf.nextIndex[server] - 1
-		// Debug(dLog, "S%d replicated entries: %v to S%d. me: %s, args: %s\n", rf.me, args.Entries, server, rf, args)
-		go ApplySafeEntries(rf)
+		logger.Debug(logger.DLog, "S%d replicated entries: %v to S%d. me: %s, args: %s\n", rf.me, args.Entries, server, rf, args)
+		go applySafeEntries(rf)
 		rf.mu.Unlock()
 		return
 

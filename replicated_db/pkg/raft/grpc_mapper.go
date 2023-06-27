@@ -16,7 +16,6 @@ func MapGrpcEntriesToRaftEntries(src []*pb.LogEntry) []logEntry {
 	return result
 }
 
-
 func MapRaftEntriestoGrpcEntries(src []logEntry) []*pb.LogEntry {
 	result := make([]*pb.LogEntry, 0)
 

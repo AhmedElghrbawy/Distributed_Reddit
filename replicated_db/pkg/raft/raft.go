@@ -66,9 +66,9 @@ const (
 	leader    state = "leader"
 )
 const (
-	MINTO  int = 600
-	MAXTO  int = 1500
-	HBRATE int = 100
+	MINTO  int = 400
+	MAXTO  int = 750
+	HBRATE int = 40
 )
 
 // A Go object implementing a single Raft peer.
@@ -130,6 +130,8 @@ func Make(peerAddresses []netip.AddrPort, me int, applyCh chan ApplyMsg) *Raft {
 	rf.commitIndex = 0
 	rf.lastApplied = 0
 	rf.peers = make([]pb.RaftGRPCClient, 0)
+
+	logger.Init()
 
 	lis, err := net.Listen("tcp", peerAddresses[me].String())
 	if err != nil {
@@ -377,7 +379,7 @@ func heartbeat(rf *Raft) {
 			rf.mu.Unlock()
 			break
 		}
-		logger.Debug(logger.DLeader, "S%d is sending heartbeats in term %d. state: %s\n", rf.me, rf.currentTerm, rf.state)
+		// logger.Debug(logger.DLeader, "S%d is sending heartbeats in term %d. state: %s\n", rf.me, rf.currentTerm, rf.state)
 		for i := 0; i < len(rf.peers); i++ {
 			if i != rf.me {
 				appendArgs := pb.AppendEntriesArgs{

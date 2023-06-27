@@ -74,7 +74,9 @@ func (rf *Raft) AppendEntries(ctx context.Context, args *pb.AppendEntriesArgs) (
 
 	rf.lastRpcTime = time.Now()
 
-	logger.Debug(logger.DInfo, "S%d got AE from %d. me: %s, args: %s\n", rf.me, args.LeaderId, rf, args)
+	if !args.IsHeartbeat {
+		logger.Debug(logger.DInfo, "S%d got AE from %d. me: %s, args: %s\n", rf.me, args.LeaderId, rf, args)
+	}
 
 	if rf.currentTerm <= int(args.Term) {
 		if rf.currentTerm < int(args.Term) {
@@ -110,7 +112,9 @@ func (rf *Raft) AppendEntries(ctx context.Context, args *pb.AppendEntriesArgs) (
 
 	// Figure 2: A. AppendEntries RPC: rec implementaion: 3. If an existing entry conflicts with a new one (same index but different term) delete
 
-	logger.Debug(logger.DLog, "S%d about to accept logs. me: %s, args: %s\n", rf.me, rf, args)
+	if !args.IsHeartbeat {
+		logger.Debug(logger.DLog, "S%d about to accept logs. me: %s, args: %s\n", rf.me, rf, args)
+	}
 	// TODO: you might need to optimize here. rf.persist() is called twice, once in revertToFollower and here which might take a lot of time
 	for i, entry := range args.Entries {
 		if int(entry.Index) < len(rf.log) {
@@ -125,7 +129,10 @@ func (rf *Raft) AppendEntries(ctx context.Context, args *pb.AppendEntriesArgs) (
 			break
 		}
 	}
-	logger.Debug(logger.DLog, "S%d accepted logs. me: %s, args: %s\n", rf.me, rf, args)
+
+	if !args.IsHeartbeat {
+		logger.Debug(logger.DLog, "S%d accepted logs. me: %s, args: %s\n", rf.me, rf, args)
+	}
 
 	reply.Success = true
 

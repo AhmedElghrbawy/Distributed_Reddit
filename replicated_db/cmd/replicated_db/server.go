@@ -18,6 +18,10 @@ type rdbServer struct {
 	peerAddresses []netip.AddrPort
 }
 
+type op struct {
+	query string
+}
+
 /*
 command line arguments
 
@@ -30,18 +34,30 @@ command line arguments
 example: ./prog npeers pAdd0 pAdd1 ... pAddn me
 */
 func main() {
-	rdbServer := &rdbServer{}
-	rdbServer.applyCh = make(chan raft.ApplyMsg)
+	rdb := &rdbServer{}
+	rdb.applyCh = make(chan raft.ApplyMsg)
 
-	parseCommandLineArgs(rdbServer)
+	parseCommandLineArgs(rdb)
 
-	log.Printf("replicated DB server started with state {me: %d, peers: %v}\n", rdbServer.me, rdbServer.peerAddresses)
+	log.Printf("replicated DB server started with state {me: %d, peers: %v}\n", rdb.me, rdb.peerAddresses)
 
-	rdbServer.rf = raft.Make(rdbServer.peerAddresses, rdbServer.me, rdbServer.applyCh)
+	rdb.rf = raft.Make(rdb.peerAddresses, rdb.me, rdb.applyCh)
 
+	go rdb.applyCommands()
 }
 
-func parseCommandLineArgs(rdbServer *rdbServer) {
+func (rdb *rdbServer) applyCommands() {
+	for {
+		msg := <-rdb.applyCh
+
+		op := msg.Command
+
+		log.Printf("got op back %s\n", string(op))
+
+	}
+}
+
+func parseCommandLineArgs(rdb *rdbServer) {
 	args := os.Args[1:]
 	log.Printf("command line arguments: %v\n", args)
 
@@ -63,7 +79,7 @@ func parseCommandLineArgs(rdbServer *rdbServer) {
 		peers = append(peers, add)
 	}
 
-	rdbServer.peerAddresses = peers
+	rdb.peerAddresses = peers
 
 	// me
 	me, err := strconv.ParseInt(args[npeers+1], 10, 32)
@@ -71,6 +87,6 @@ func parseCommandLineArgs(rdbServer *rdbServer) {
 		log.Fatalf("failed to parse command line argument me, %v\n", err)
 	}
 
-	rdbServer.me = int(me)
+	rdb.me = int(me)
 
 }

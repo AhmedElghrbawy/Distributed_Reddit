@@ -2,7 +2,6 @@ package raft
 
 import (
 	"context"
-	"log"
 	"time"
 
 	pb "github.com/ahmedelghrbawy/replicated_db/pkg/raft_grpc"
@@ -17,7 +16,7 @@ func (rf *Raft) sendRequestVote(server int, args *pb.RequestVoteArgs) (*pb.Reque
 	reply, err := rf.peers[server].RequestVote(ctx, args)
 
 	if err != nil {
-		log.Printf("couldn't send request vote %v\n", err)
+		// log.Printf("couldn't send request vote %v\n", err)
 		return nil, err
 	}
 
@@ -31,7 +30,7 @@ func (rf *Raft) sendAppendEntries(server int, args *pb.AppendEntriesArgs) (*pb.A
 	reply, err := rf.peers[server].AppendEntries(ctx, args)
 
 	if err != nil {
-		log.Printf("couldn't send request append entries %v\n", err)
+		// log.Printf("couldn't send request append entries %v\n", err)
 		return nil, err
 	}
 

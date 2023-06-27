@@ -113,10 +113,9 @@ persister is a place for this server to save its persistent state, and also init
 applyCh is a channel on which the service expects Raft to send ApplyMsg messages.
 Make() must return quickly, so it should start goroutines for any long-running work.
 */
-func Make(peerAddresses []netip.AddrPort, me int,
-	persister *persister.Persister, applyCh chan ApplyMsg) *Raft {
+func Make(peerAddresses []netip.AddrPort, me int, applyCh chan ApplyMsg) *Raft {
 	rf := &Raft{}
-	rf.persister = persister
+	rf.persister = persister.MakePersister()
 	rf.me = me
 	rf.applyCh = applyCh
 	rf.appendNotifiers = make([]chan struct{}, 0)
@@ -130,7 +129,7 @@ func Make(peerAddresses []netip.AddrPort, me int,
 	}}
 	rf.commitIndex = 0
 	rf.lastApplied = 0
-	rf.nextIndex = make([]int, len(rf.peers))
+	rf.peers = make([]pb.RaftGRPCClient, 0)
 
 	lis, err := net.Listen("tcp", peerAddresses[me].String())
 	if err != nil {
@@ -149,6 +148,7 @@ func Make(peerAddresses []netip.AddrPort, me int,
 
 	for i, peerAddress := range peerAddresses {
 		if i == me {
+			rf.peers = append(rf.peers, nil)
 			continue
 		}
 		// TODO: need to clean up these connections somewhere, maybe send a cancellation signal from the application layer
@@ -160,8 +160,10 @@ func Make(peerAddresses []netip.AddrPort, me int,
 
 		client := pb.NewRaftGRPCClient(conn)
 
-		rf.peers[i] = client
+		rf.peers = append(rf.peers, client)
 	}
+
+	rf.nextIndex = make([]int, len(rf.peers))
 
 	for i := 0; i < len(rf.peers); i++ {
 		rf.nextIndex[i] = 1
@@ -171,7 +173,7 @@ func Make(peerAddresses []netip.AddrPort, me int,
 	rf.electionTimeout = rand.Intn(MAXTO-MINTO) + MINTO
 
 	// initialize from state persisted before a crash
-	rf.readPersist(persister.ReadRaftState())
+	rf.readPersist(rf.persister.ReadRaftState())
 
 	// each peer will have a long running notifier go routine that waits to be notified of a new command or a won ellection and starts sending append entries to this peer
 	// this helps avoiding inconsistencies

@@ -1,0 +1,134 @@
+syntax = "proto3";
+package db_grpc;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+
+
+option csharp_namespace = "db_grpc";
+option go_package = "github.com/ahmedelghrbawy/replicated_db/cmd/main";
+
+
+// models represented in the database
+message Subreddit {
+    string handle = 1;
+    string title = 2;
+    string about = 3;
+    bytes avatar = 4;
+    string rules = 5;
+    google.protobuf.Timestamp created_at = 6;
+    repeated User users = 7;
+    repeated User admins = 8;
+}
+
+message User {
+    string handle = 1;
+    string display_name = 2;
+    bytes avatar = 3;
+    google.protobuf.Timestamp created_at = 4;
+    int32 karma = 5;
+    repeated Comment comments = 6;
+    repeated Post posts = 7;
+    repeated string following_handles = 8;
+    repeated string followed_by_handles = 9; 
+}
+
+message Post {
+    string id = 1;
+    string title = 2;
+    string content = 3;
+    bytes image = 4;
+    google.protobuf.Timestamp created_at = 5;
+    int32 number_of_votes = 6;
+    bool is_pinned = 7;
+    string owner_handle = 8;
+    string subreddit_handle = 9;
+    repeated Comment comments = 10;
+    repeated string tags = 11;
+}
+
+message Comment {
+    string id = 1;
+    string content = 2;
+    bytes image = 3;
+    int32 number_of_votes = 4;
+    string owner_handle = 5;
+    string parent_comment_id = 6;
+    string post_id = 7; 
+}
+ 
+
+
+service SubredditGRPC {
+    // we only need the subreddit handle (string)
+    // but protobuf doesn't support primitives as paramaters 
+    rpc GetSubreddit(Subreddit) returns (Subreddit);
+    rpc CreateSubreddit(Subreddit) returns (Subreddit);
+    rpc GetSubreddits(google.protobuf.Empty) returns (SubredditList);
+}
+
+service PostGRPC {
+    rpc GetPost(PostInfo) returns (Post);
+    rpc CreatPost(PostInfo) returns (Post);
+    rpc GetPosts(google.protobuf.Empty) returns (PostList);
+    rpc Pin(Post) returns (Post);
+    rpc Unpin(Post) returns (Post);
+    rpc UpVote(Post) returns (Post);
+    rpc DownVote(Post) returns (Post);
+}
+ 
+service UserGRPC {
+    rpc GetUser(User) returns (User);
+    rpc CreateUser(User) returns (User);
+    rpc IncreaseKarma(User) returns (User);
+    rpc DecreaseKarma(User) returns (User);
+    rpc Follow(UserFollowage) returns (google.protobuf.Empty);
+    rpc Unfollow(UserFollowage) returns (google.protobuf.Empty);
+    rpc JoinSubreddit(UserSubredditMembership) returns (google.protobuf.Empty);
+    rpc LeaveSubreddit(UserSubredditMembership) returns (google.protobuf.Empty);
+}
+
+service CommentGRPC {
+    rpc AddComment(CommentInfo) returns (Comment);
+    rpc UpVote(Comment) returns (Comment);
+    rpc DownVote(Comment) returns (Comment);
+}
+
+// custom arg & reply messages for the services defined above 
+message SubredditList {
+    repeated Subreddit subreddits = 1;
+}
+
+message PostList {
+    repeated Post posts = 1;
+}
+
+message TwoPhaseCommitInfo {
+    bool twopc_enabled = 1;
+    string transaction_id = 2;
+}
+
+message PostInfo {
+    Post post = 1;
+    int32 user_shard = 2;
+    int32 subreddit_shard = 3;
+    TwoPhaseCommitInfo twopc_info = 4;
+}
+
+message CommentInfo {
+    Comment comment = 1;
+    int32 user_shard = 2;
+    int32 subreddit_shard = 3;
+    TwoPhaseCommitInfo twopc_info = 4;
+}
+
+message UserFollowage {
+    string from_handle = 1;
+    string to_handle = 2;
+}
+
+message UserSubredditMembership {
+    string user_handle = 1;
+    string subreddit_handle = 2;
+}

@@ -4,12 +4,15 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/netip"
 	"os"
 	"strconv"
 	"sync"
 
 	"github.com/ahmedelghrbawy/replicated_db/pkg/raft"
+	pb "github.com/ahmedelghrbawy/replicated_db/pkg/rdb_grpc"
+	"google.golang.org/grpc"
 )
 
 type rdbServer struct {
@@ -20,6 +23,7 @@ type rdbServer struct {
 	applyCh            chan raft.ApplyMsg
 	raftPeersAddresses []netip.AddrPort
 	myAddress          netip.AddrPort
+	pb.UnimplementedSubredditGRPCServer
 }
 
 type op struct {
@@ -40,8 +44,22 @@ func main() {
 	parseConfigFile(rdb)
 
 	rdb.rf = raft.Make(rdb.raftPeersAddresses, rdb.replicaNum, rdb.applyCh)
+	go rdb.applyCommands()
 
-	// go rdb.applyCommands()
+
+	lis, err := net.Listen("tcp", rdb.myAddress.String())
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	grpc_server := grpc.NewServer()
+	pb.RegisterSubredditGRPCServer(grpc_server, rdb)
+
+	if err := grpc_server.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
+
+	log.Printf("shard: %d, replica %d listening on: %s\n", rdb.shardNum, rdb.replicaNum, rdb.myAddress.String())
 }
 
 func (rdb *rdbServer) applyCommands() {

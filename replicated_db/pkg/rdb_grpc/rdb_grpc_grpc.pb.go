@@ -4,7 +4,7 @@
 // - protoc             v4.23.3
 // source: rdb_grpc.proto
 
-package main
+package rdb_grpc
 
 import (
 	context "context"

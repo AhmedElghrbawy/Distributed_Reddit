@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/netip"
 	"os"
@@ -11,11 +13,13 @@ import (
 )
 
 type rdbServer struct {
-	mu            sync.Mutex
-	me            int
-	rf            *raft.Raft
-	applyCh       chan raft.ApplyMsg
-	peerAddresses []netip.AddrPort
+	mu                 sync.Mutex
+	shardNum           int
+	replicaNum         int
+	rf                 *raft.Raft
+	applyCh            chan raft.ApplyMsg
+	raftPeersAddresses []netip.AddrPort
+	myAddress          netip.AddrPort
 }
 
 type op struct {
@@ -23,15 +27,7 @@ type op struct {
 }
 
 /*
-command line arguments
-
-	{
-		nPeers: int                // number of peers
-		pAddI:  ip:port           // address of the i'th peer
-		me:     int               // index of this server in peers list
-	}
-
-example: ./prog npeers pAdd0 pAdd1 ... pAddn me
+example: ./prog shardNum replicaNum
 */
 func main() {
 	rdb := &rdbServer{}
@@ -39,11 +35,13 @@ func main() {
 
 	parseCommandLineArgs(rdb)
 
-	log.Printf("replicated DB server started with state {me: %d, peers: %v}\n", rdb.me, rdb.peerAddresses)
+	log.Printf("replicated DB server {shardNum: %d, replicaNum: %v} started\n", rdb.shardNum, rdb.replicaNum)
 
-	rdb.rf = raft.Make(rdb.peerAddresses, rdb.me, rdb.applyCh)
+	parseConfigFile(rdb)
 
-	go rdb.applyCommands()
+	rdb.rf = raft.Make(rdb.raftPeersAddresses, rdb.replicaNum, rdb.applyCh)
+
+	// go rdb.applyCommands()
 }
 
 func (rdb *rdbServer) applyCommands() {
@@ -58,35 +56,60 @@ func (rdb *rdbServer) applyCommands() {
 }
 
 func parseCommandLineArgs(rdb *rdbServer) {
+
 	args := os.Args[1:]
 	log.Printf("command line arguments: %v\n", args)
 
-	// npeers
-	npeers, err := strconv.ParseInt(args[0], 10, 32)
+	// shardNum
+	shardNum, err := strconv.ParseInt(args[0], 10, 32)
 
 	if err != nil {
 		log.Fatalf("failed to parse command line argument npeers, %v\n", err)
 	}
+	rdb.shardNum = int(shardNum)
 
-	// peers
-	peers := make([]netip.AddrPort, 0)
-	for i := 0; i < int(npeers); i++ {
-		add, err := netip.ParseAddrPort(args[i+1])
-		if err != nil {
-			log.Fatalf("couldn't parse address from command line arguments arg: %s, %v", args[i+1], err)
-		}
+	// replicaNum
+	replicaNum, err := strconv.ParseInt(args[1], 10, 32)
 
-		peers = append(peers, add)
-	}
-
-	rdb.peerAddresses = peers
-
-	// me
-	me, err := strconv.ParseInt(args[npeers+1], 10, 32)
 	if err != nil {
-		log.Fatalf("failed to parse command line argument me, %v\n", err)
+		log.Fatalf("failed to parse command line argument npeers, %v\n", err)
+	}
+	rdb.replicaNum = int(replicaNum)
+
+}
+
+type Config struct {
+	NumberOfShards        int        `json:"number_of_shards"`
+	Number_of_replicas    int        `json:"number_of_replicas"`
+	Shard_rdb_servers_ips [][]string `json:"shard_rdb_servers_ips"`
+	Shard_raft_peers_ips  [][]string `json:"shard_raft_peers_ips"`
+}
+
+func parseConfigFile(rdb *rdbServer) {
+	file, err := ioutil.ReadFile("../config.json")
+	if err != nil {
+		log.Fatalf("couldn't read config file, %v\n", err)
 	}
 
-	rdb.me = int(me)
+	var config Config
+	json.Unmarshal(file, &config)
+
+	myAddress, err := netip.ParseAddrPort(config.Shard_rdb_servers_ips[rdb.shardNum][rdb.replicaNum])
+	if err != nil {
+		log.Fatalf("couldn't parse myAddress from config: %s, %v", config.Shard_rdb_servers_ips[rdb.shardNum][rdb.replicaNum], err)
+	}
+	rdb.myAddress = myAddress
+
+	raftPeersAddresses := make([]netip.AddrPort, 0)
+
+	for i := 0; i < config.Number_of_replicas; i++ {
+		add, err := netip.ParseAddrPort(config.Shard_raft_peers_ips[rdb.shardNum][i])
+		if err != nil {
+			log.Fatalf("couldn't parse raft peer address from config: %s, %v", config.Shard_raft_peers_ips[rdb.shardNum][i], err)
+		}
+		raftPeersAddresses = append(raftPeersAddresses, add)
+	}
+
+	rdb.raftPeersAddresses = raftPeersAddresses
 
 }

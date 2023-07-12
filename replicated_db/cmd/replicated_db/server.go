@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
@@ -13,22 +14,32 @@ import (
 	"github.com/ahmedelghrbawy/replicated_db/pkg/raft"
 	pb "github.com/ahmedelghrbawy/replicated_db/pkg/rdb_grpc"
 	"google.golang.org/grpc"
+
+	_ "github.com/lib/pq"
 )
 
 type rdbServer struct {
-	mu                 sync.Mutex
 	shardNum           int
 	replicaNum         int
+	dbConnectionStr    string
 	rf                 *raft.Raft
+	mu                 sync.Mutex
 	applyCh            chan raft.ApplyMsg
 	raftPeersAddresses []netip.AddrPort
 	myAddress          netip.AddrPort
+
 	pb.UnimplementedSubredditGRPCServer
 }
 
 type op struct {
 	query string
 }
+
+const (
+	db_host = "localhost"
+	db_port = 5432
+	db_user = "postgres"
+)
 
 /*
 example: ./prog shardNum replicaNum
@@ -43,9 +54,14 @@ func main() {
 
 	parseConfigFile(rdb)
 
+	db_name := fmt.Sprintf("S%d_R%d", rdb.shardNum, rdb.replicaNum)
+	db_pass := os.Getenv("PSQL_PASS")
+	rdb.dbConnectionStr = fmt.Sprintf("host=%s port=%d user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		db_host, db_port, db_user, db_pass, db_name)
+
 	rdb.rf = raft.Make(rdb.raftPeersAddresses, rdb.replicaNum, rdb.applyCh)
 	go rdb.applyCommands()
-
 
 	lis, err := net.Listen("tcp", rdb.myAddress.String())
 	if err != nil {

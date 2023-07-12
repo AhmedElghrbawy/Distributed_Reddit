@@ -1,12 +1,12 @@
 syntax = "proto3";
-package db_grpc;
+package rdb_grpc;
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
 
 
-option csharp_namespace = "db_grpc";
+option csharp_namespace = "rdb_grpc";
 option go_package = "github.com/ahmedelghrbawy/replicated_db/cmd/main";
 
 

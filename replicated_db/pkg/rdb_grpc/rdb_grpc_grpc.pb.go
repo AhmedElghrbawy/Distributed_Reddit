@@ -31,8 +31,8 @@ const (
 type SubredditGRPCClient interface {
 	// we only need the subreddit handle (string)
 	// but protobuf doesn't support primitives as paramaters
-	GetSubreddit(ctx context.Context, in *Subreddit, opts ...grpc.CallOption) (*Subreddit, error)
-	CreateSubreddit(ctx context.Context, in *Subreddit, opts ...grpc.CallOption) (*Subreddit, error)
+	GetSubreddit(ctx context.Context, in *SubredditInfo, opts ...grpc.CallOption) (*Subreddit, error)
+	CreateSubreddit(ctx context.Context, in *SubredditInfo, opts ...grpc.CallOption) (*Subreddit, error)
 	GetSubreddits(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SubredditList, error)
 }
 
@@ -44,7 +44,7 @@ func NewSubredditGRPCClient(cc grpc.ClientConnInterface) SubredditGRPCClient {
 	return &subredditGRPCClient{cc}
 }
 
-func (c *subredditGRPCClient) GetSubreddit(ctx context.Context, in *Subreddit, opts ...grpc.CallOption) (*Subreddit, error) {
+func (c *subredditGRPCClient) GetSubreddit(ctx context.Context, in *SubredditInfo, opts ...grpc.CallOption) (*Subreddit, error) {
 	out := new(Subreddit)
 	err := c.cc.Invoke(ctx, SubredditGRPC_GetSubreddit_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -53,7 +53,7 @@ func (c *subredditGRPCClient) GetSubreddit(ctx context.Context, in *Subreddit, o
 	return out, nil
 }
 
-func (c *subredditGRPCClient) CreateSubreddit(ctx context.Context, in *Subreddit, opts ...grpc.CallOption) (*Subreddit, error) {
+func (c *subredditGRPCClient) CreateSubreddit(ctx context.Context, in *SubredditInfo, opts ...grpc.CallOption) (*Subreddit, error) {
 	out := new(Subreddit)
 	err := c.cc.Invoke(ctx, SubredditGRPC_CreateSubreddit_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -77,8 +77,8 @@ func (c *subredditGRPCClient) GetSubreddits(ctx context.Context, in *emptypb.Emp
 type SubredditGRPCServer interface {
 	// we only need the subreddit handle (string)
 	// but protobuf doesn't support primitives as paramaters
-	GetSubreddit(context.Context, *Subreddit) (*Subreddit, error)
-	CreateSubreddit(context.Context, *Subreddit) (*Subreddit, error)
+	GetSubreddit(context.Context, *SubredditInfo) (*Subreddit, error)
+	CreateSubreddit(context.Context, *SubredditInfo) (*Subreddit, error)
 	GetSubreddits(context.Context, *emptypb.Empty) (*SubredditList, error)
 	mustEmbedUnimplementedSubredditGRPCServer()
 }
@@ -87,10 +87,10 @@ type SubredditGRPCServer interface {
 type UnimplementedSubredditGRPCServer struct {
 }
 
-func (UnimplementedSubredditGRPCServer) GetSubreddit(context.Context, *Subreddit) (*Subreddit, error) {
+func (UnimplementedSubredditGRPCServer) GetSubreddit(context.Context, *SubredditInfo) (*Subreddit, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSubreddit not implemented")
 }
-func (UnimplementedSubredditGRPCServer) CreateSubreddit(context.Context, *Subreddit) (*Subreddit, error) {
+func (UnimplementedSubredditGRPCServer) CreateSubreddit(context.Context, *SubredditInfo) (*Subreddit, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateSubreddit not implemented")
 }
 func (UnimplementedSubredditGRPCServer) GetSubreddits(context.Context, *emptypb.Empty) (*SubredditList, error) {
@@ -110,7 +110,7 @@ func RegisterSubredditGRPCServer(s grpc.ServiceRegistrar, srv SubredditGRPCServe
 }
 
 func _SubredditGRPC_GetSubreddit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Subreddit)
+	in := new(SubredditInfo)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -122,13 +122,13 @@ func _SubredditGRPC_GetSubreddit_Handler(srv interface{}, ctx context.Context, d
 		FullMethod: SubredditGRPC_GetSubreddit_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SubredditGRPCServer).GetSubreddit(ctx, req.(*Subreddit))
+		return srv.(SubredditGRPCServer).GetSubreddit(ctx, req.(*SubredditInfo))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _SubredditGRPC_CreateSubreddit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Subreddit)
+	in := new(SubredditInfo)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -140,7 +140,7 @@ func _SubredditGRPC_CreateSubreddit_Handler(srv interface{}, ctx context.Context
 		FullMethod: SubredditGRPC_CreateSubreddit_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SubredditGRPCServer).CreateSubreddit(ctx, req.(*Subreddit))
+		return srv.(SubredditGRPCServer).CreateSubreddit(ctx, req.(*SubredditInfo))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -204,10 +204,10 @@ type PostGRPCClient interface {
 	GetPost(ctx context.Context, in *PostInfo, opts ...grpc.CallOption) (*Post, error)
 	CreatPost(ctx context.Context, in *PostInfo, opts ...grpc.CallOption) (*Post, error)
 	GetPosts(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PostList, error)
-	Pin(ctx context.Context, in *Post, opts ...grpc.CallOption) (*Post, error)
-	Unpin(ctx context.Context, in *Post, opts ...grpc.CallOption) (*Post, error)
-	UpVote(ctx context.Context, in *Post, opts ...grpc.CallOption) (*Post, error)
-	DownVote(ctx context.Context, in *Post, opts ...grpc.CallOption) (*Post, error)
+	Pin(ctx context.Context, in *PostInfo, opts ...grpc.CallOption) (*Post, error)
+	Unpin(ctx context.Context, in *PostInfo, opts ...grpc.CallOption) (*Post, error)
+	UpVote(ctx context.Context, in *PostInfo, opts ...grpc.CallOption) (*Post, error)
+	DownVote(ctx context.Context, in *PostInfo, opts ...grpc.CallOption) (*Post, error)
 }
 
 type postGRPCClient struct {
@@ -245,7 +245,7 @@ func (c *postGRPCClient) GetPosts(ctx context.Context, in *emptypb.Empty, opts .
 	return out, nil
 }
 
-func (c *postGRPCClient) Pin(ctx context.Context, in *Post, opts ...grpc.CallOption) (*Post, error) {
+func (c *postGRPCClient) Pin(ctx context.Context, in *PostInfo, opts ...grpc.CallOption) (*Post, error) {
 	out := new(Post)
 	err := c.cc.Invoke(ctx, PostGRPC_Pin_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -254,7 +254,7 @@ func (c *postGRPCClient) Pin(ctx context.Context, in *Post, opts ...grpc.CallOpt
 	return out, nil
 }
 
-func (c *postGRPCClient) Unpin(ctx context.Context, in *Post, opts ...grpc.CallOption) (*Post, error) {
+func (c *postGRPCClient) Unpin(ctx context.Context, in *PostInfo, opts ...grpc.CallOption) (*Post, error) {
 	out := new(Post)
 	err := c.cc.Invoke(ctx, PostGRPC_Unpin_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -263,7 +263,7 @@ func (c *postGRPCClient) Unpin(ctx context.Context, in *Post, opts ...grpc.CallO
 	return out, nil
 }
 
-func (c *postGRPCClient) UpVote(ctx context.Context, in *Post, opts ...grpc.CallOption) (*Post, error) {
+func (c *postGRPCClient) UpVote(ctx context.Context, in *PostInfo, opts ...grpc.CallOption) (*Post, error) {
 	out := new(Post)
 	err := c.cc.Invoke(ctx, PostGRPC_UpVote_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -272,7 +272,7 @@ func (c *postGRPCClient) UpVote(ctx context.Context, in *Post, opts ...grpc.Call
 	return out, nil
 }
 
-func (c *postGRPCClient) DownVote(ctx context.Context, in *Post, opts ...grpc.CallOption) (*Post, error) {
+func (c *postGRPCClient) DownVote(ctx context.Context, in *PostInfo, opts ...grpc.CallOption) (*Post, error) {
 	out := new(Post)
 	err := c.cc.Invoke(ctx, PostGRPC_DownVote_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -288,10 +288,10 @@ type PostGRPCServer interface {
 	GetPost(context.Context, *PostInfo) (*Post, error)
 	CreatPost(context.Context, *PostInfo) (*Post, error)
 	GetPosts(context.Context, *emptypb.Empty) (*PostList, error)
-	Pin(context.Context, *Post) (*Post, error)
-	Unpin(context.Context, *Post) (*Post, error)
-	UpVote(context.Context, *Post) (*Post, error)
-	DownVote(context.Context, *Post) (*Post, error)
+	Pin(context.Context, *PostInfo) (*Post, error)
+	Unpin(context.Context, *PostInfo) (*Post, error)
+	UpVote(context.Context, *PostInfo) (*Post, error)
+	DownVote(context.Context, *PostInfo) (*Post, error)
 	mustEmbedUnimplementedPostGRPCServer()
 }
 
@@ -308,16 +308,16 @@ func (UnimplementedPostGRPCServer) CreatPost(context.Context, *PostInfo) (*Post,
 func (UnimplementedPostGRPCServer) GetPosts(context.Context, *emptypb.Empty) (*PostList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPosts not implemented")
 }
-func (UnimplementedPostGRPCServer) Pin(context.Context, *Post) (*Post, error) {
+func (UnimplementedPostGRPCServer) Pin(context.Context, *PostInfo) (*Post, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Pin not implemented")
 }
-func (UnimplementedPostGRPCServer) Unpin(context.Context, *Post) (*Post, error) {
+func (UnimplementedPostGRPCServer) Unpin(context.Context, *PostInfo) (*Post, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Unpin not implemented")
 }
-func (UnimplementedPostGRPCServer) UpVote(context.Context, *Post) (*Post, error) {
+func (UnimplementedPostGRPCServer) UpVote(context.Context, *PostInfo) (*Post, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpVote not implemented")
 }
-func (UnimplementedPostGRPCServer) DownVote(context.Context, *Post) (*Post, error) {
+func (UnimplementedPostGRPCServer) DownVote(context.Context, *PostInfo) (*Post, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DownVote not implemented")
 }
 func (UnimplementedPostGRPCServer) mustEmbedUnimplementedPostGRPCServer() {}
@@ -388,7 +388,7 @@ func _PostGRPC_GetPosts_Handler(srv interface{}, ctx context.Context, dec func(i
 }
 
 func _PostGRPC_Pin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Post)
+	in := new(PostInfo)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -400,13 +400,13 @@ func _PostGRPC_Pin_Handler(srv interface{}, ctx context.Context, dec func(interf
 		FullMethod: PostGRPC_Pin_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PostGRPCServer).Pin(ctx, req.(*Post))
+		return srv.(PostGRPCServer).Pin(ctx, req.(*PostInfo))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _PostGRPC_Unpin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Post)
+	in := new(PostInfo)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -418,13 +418,13 @@ func _PostGRPC_Unpin_Handler(srv interface{}, ctx context.Context, dec func(inte
 		FullMethod: PostGRPC_Unpin_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PostGRPCServer).Unpin(ctx, req.(*Post))
+		return srv.(PostGRPCServer).Unpin(ctx, req.(*PostInfo))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _PostGRPC_UpVote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Post)
+	in := new(PostInfo)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -436,13 +436,13 @@ func _PostGRPC_UpVote_Handler(srv interface{}, ctx context.Context, dec func(int
 		FullMethod: PostGRPC_UpVote_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PostGRPCServer).UpVote(ctx, req.(*Post))
+		return srv.(PostGRPCServer).UpVote(ctx, req.(*PostInfo))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _PostGRPC_DownVote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Post)
+	in := new(PostInfo)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -454,7 +454,7 @@ func _PostGRPC_DownVote_Handler(srv interface{}, ctx context.Context, dec func(i
 		FullMethod: PostGRPC_DownVote_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PostGRPCServer).DownVote(ctx, req.(*Post))
+		return srv.(PostGRPCServer).DownVote(ctx, req.(*PostInfo))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -514,10 +514,10 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserGRPCClient interface {
-	GetUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*User, error)
-	CreateUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*User, error)
-	IncreaseKarma(ctx context.Context, in *User, opts ...grpc.CallOption) (*User, error)
-	DecreaseKarma(ctx context.Context, in *User, opts ...grpc.CallOption) (*User, error)
+	GetUser(ctx context.Context, in *UserInfo, opts ...grpc.CallOption) (*User, error)
+	CreateUser(ctx context.Context, in *UserInfo, opts ...grpc.CallOption) (*User, error)
+	IncreaseKarma(ctx context.Context, in *UserInfo, opts ...grpc.CallOption) (*User, error)
+	DecreaseKarma(ctx context.Context, in *UserInfo, opts ...grpc.CallOption) (*User, error)
 	Follow(ctx context.Context, in *UserFollowage, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Unfollow(ctx context.Context, in *UserFollowage, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	JoinSubreddit(ctx context.Context, in *UserSubredditMembership, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -532,7 +532,7 @@ func NewUserGRPCClient(cc grpc.ClientConnInterface) UserGRPCClient {
 	return &userGRPCClient{cc}
 }
 
-func (c *userGRPCClient) GetUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*User, error) {
+func (c *userGRPCClient) GetUser(ctx context.Context, in *UserInfo, opts ...grpc.CallOption) (*User, error) {
 	out := new(User)
 	err := c.cc.Invoke(ctx, UserGRPC_GetUser_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -541,7 +541,7 @@ func (c *userGRPCClient) GetUser(ctx context.Context, in *User, opts ...grpc.Cal
 	return out, nil
 }
 
-func (c *userGRPCClient) CreateUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*User, error) {
+func (c *userGRPCClient) CreateUser(ctx context.Context, in *UserInfo, opts ...grpc.CallOption) (*User, error) {
 	out := new(User)
 	err := c.cc.Invoke(ctx, UserGRPC_CreateUser_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -550,7 +550,7 @@ func (c *userGRPCClient) CreateUser(ctx context.Context, in *User, opts ...grpc.
 	return out, nil
 }
 
-func (c *userGRPCClient) IncreaseKarma(ctx context.Context, in *User, opts ...grpc.CallOption) (*User, error) {
+func (c *userGRPCClient) IncreaseKarma(ctx context.Context, in *UserInfo, opts ...grpc.CallOption) (*User, error) {
 	out := new(User)
 	err := c.cc.Invoke(ctx, UserGRPC_IncreaseKarma_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -559,7 +559,7 @@ func (c *userGRPCClient) IncreaseKarma(ctx context.Context, in *User, opts ...gr
 	return out, nil
 }
 
-func (c *userGRPCClient) DecreaseKarma(ctx context.Context, in *User, opts ...grpc.CallOption) (*User, error) {
+func (c *userGRPCClient) DecreaseKarma(ctx context.Context, in *UserInfo, opts ...grpc.CallOption) (*User, error) {
 	out := new(User)
 	err := c.cc.Invoke(ctx, UserGRPC_DecreaseKarma_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -608,10 +608,10 @@ func (c *userGRPCClient) LeaveSubreddit(ctx context.Context, in *UserSubredditMe
 // All implementations must embed UnimplementedUserGRPCServer
 // for forward compatibility
 type UserGRPCServer interface {
-	GetUser(context.Context, *User) (*User, error)
-	CreateUser(context.Context, *User) (*User, error)
-	IncreaseKarma(context.Context, *User) (*User, error)
-	DecreaseKarma(context.Context, *User) (*User, error)
+	GetUser(context.Context, *UserInfo) (*User, error)
+	CreateUser(context.Context, *UserInfo) (*User, error)
+	IncreaseKarma(context.Context, *UserInfo) (*User, error)
+	DecreaseKarma(context.Context, *UserInfo) (*User, error)
 	Follow(context.Context, *UserFollowage) (*emptypb.Empty, error)
 	Unfollow(context.Context, *UserFollowage) (*emptypb.Empty, error)
 	JoinSubreddit(context.Context, *UserSubredditMembership) (*emptypb.Empty, error)
@@ -623,16 +623,16 @@ type UserGRPCServer interface {
 type UnimplementedUserGRPCServer struct {
 }
 
-func (UnimplementedUserGRPCServer) GetUser(context.Context, *User) (*User, error) {
+func (UnimplementedUserGRPCServer) GetUser(context.Context, *UserInfo) (*User, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUser not implemented")
 }
-func (UnimplementedUserGRPCServer) CreateUser(context.Context, *User) (*User, error) {
+func (UnimplementedUserGRPCServer) CreateUser(context.Context, *UserInfo) (*User, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateUser not implemented")
 }
-func (UnimplementedUserGRPCServer) IncreaseKarma(context.Context, *User) (*User, error) {
+func (UnimplementedUserGRPCServer) IncreaseKarma(context.Context, *UserInfo) (*User, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IncreaseKarma not implemented")
 }
-func (UnimplementedUserGRPCServer) DecreaseKarma(context.Context, *User) (*User, error) {
+func (UnimplementedUserGRPCServer) DecreaseKarma(context.Context, *UserInfo) (*User, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DecreaseKarma not implemented")
 }
 func (UnimplementedUserGRPCServer) Follow(context.Context, *UserFollowage) (*emptypb.Empty, error) {
@@ -661,7 +661,7 @@ func RegisterUserGRPCServer(s grpc.ServiceRegistrar, srv UserGRPCServer) {
 }
 
 func _UserGRPC_GetUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(User)
+	in := new(UserInfo)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -673,13 +673,13 @@ func _UserGRPC_GetUser_Handler(srv interface{}, ctx context.Context, dec func(in
 		FullMethod: UserGRPC_GetUser_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserGRPCServer).GetUser(ctx, req.(*User))
+		return srv.(UserGRPCServer).GetUser(ctx, req.(*UserInfo))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _UserGRPC_CreateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(User)
+	in := new(UserInfo)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -691,13 +691,13 @@ func _UserGRPC_CreateUser_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: UserGRPC_CreateUser_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserGRPCServer).CreateUser(ctx, req.(*User))
+		return srv.(UserGRPCServer).CreateUser(ctx, req.(*UserInfo))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _UserGRPC_IncreaseKarma_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(User)
+	in := new(UserInfo)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -709,13 +709,13 @@ func _UserGRPC_IncreaseKarma_Handler(srv interface{}, ctx context.Context, dec f
 		FullMethod: UserGRPC_IncreaseKarma_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserGRPCServer).IncreaseKarma(ctx, req.(*User))
+		return srv.(UserGRPCServer).IncreaseKarma(ctx, req.(*UserInfo))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _UserGRPC_DecreaseKarma_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(User)
+	in := new(UserInfo)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -727,7 +727,7 @@ func _UserGRPC_DecreaseKarma_Handler(srv interface{}, ctx context.Context, dec f
 		FullMethod: UserGRPC_DecreaseKarma_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserGRPCServer).DecreaseKarma(ctx, req.(*User))
+		return srv.(UserGRPCServer).DecreaseKarma(ctx, req.(*UserInfo))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -859,8 +859,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CommentGRPCClient interface {
 	AddComment(ctx context.Context, in *CommentInfo, opts ...grpc.CallOption) (*Comment, error)
-	UpVote(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*Comment, error)
-	DownVote(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*Comment, error)
+	UpVote(ctx context.Context, in *CommentInfo, opts ...grpc.CallOption) (*Comment, error)
+	DownVote(ctx context.Context, in *CommentInfo, opts ...grpc.CallOption) (*Comment, error)
 }
 
 type commentGRPCClient struct {
@@ -880,7 +880,7 @@ func (c *commentGRPCClient) AddComment(ctx context.Context, in *CommentInfo, opt
 	return out, nil
 }
 
-func (c *commentGRPCClient) UpVote(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*Comment, error) {
+func (c *commentGRPCClient) UpVote(ctx context.Context, in *CommentInfo, opts ...grpc.CallOption) (*Comment, error) {
 	out := new(Comment)
 	err := c.cc.Invoke(ctx, CommentGRPC_UpVote_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -889,7 +889,7 @@ func (c *commentGRPCClient) UpVote(ctx context.Context, in *Comment, opts ...grp
 	return out, nil
 }
 
-func (c *commentGRPCClient) DownVote(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*Comment, error) {
+func (c *commentGRPCClient) DownVote(ctx context.Context, in *CommentInfo, opts ...grpc.CallOption) (*Comment, error) {
 	out := new(Comment)
 	err := c.cc.Invoke(ctx, CommentGRPC_DownVote_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -903,8 +903,8 @@ func (c *commentGRPCClient) DownVote(ctx context.Context, in *Comment, opts ...g
 // for forward compatibility
 type CommentGRPCServer interface {
 	AddComment(context.Context, *CommentInfo) (*Comment, error)
-	UpVote(context.Context, *Comment) (*Comment, error)
-	DownVote(context.Context, *Comment) (*Comment, error)
+	UpVote(context.Context, *CommentInfo) (*Comment, error)
+	DownVote(context.Context, *CommentInfo) (*Comment, error)
 	mustEmbedUnimplementedCommentGRPCServer()
 }
 
@@ -915,10 +915,10 @@ type UnimplementedCommentGRPCServer struct {
 func (UnimplementedCommentGRPCServer) AddComment(context.Context, *CommentInfo) (*Comment, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddComment not implemented")
 }
-func (UnimplementedCommentGRPCServer) UpVote(context.Context, *Comment) (*Comment, error) {
+func (UnimplementedCommentGRPCServer) UpVote(context.Context, *CommentInfo) (*Comment, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpVote not implemented")
 }
-func (UnimplementedCommentGRPCServer) DownVote(context.Context, *Comment) (*Comment, error) {
+func (UnimplementedCommentGRPCServer) DownVote(context.Context, *CommentInfo) (*Comment, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DownVote not implemented")
 }
 func (UnimplementedCommentGRPCServer) mustEmbedUnimplementedCommentGRPCServer() {}
@@ -953,7 +953,7 @@ func _CommentGRPC_AddComment_Handler(srv interface{}, ctx context.Context, dec f
 }
 
 func _CommentGRPC_UpVote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Comment)
+	in := new(CommentInfo)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -965,13 +965,13 @@ func _CommentGRPC_UpVote_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: CommentGRPC_UpVote_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CommentGRPCServer).UpVote(ctx, req.(*Comment))
+		return srv.(CommentGRPCServer).UpVote(ctx, req.(*CommentInfo))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _CommentGRPC_DownVote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Comment)
+	in := new(CommentInfo)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -983,7 +983,7 @@ func _CommentGRPC_DownVote_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: CommentGRPC_DownVote_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CommentGRPCServer).DownVote(ctx, req.(*Comment))
+		return srv.(CommentGRPCServer).DownVote(ctx, req.(*CommentInfo))
 	}
 	return interceptor(ctx, in, info, handler)
 }

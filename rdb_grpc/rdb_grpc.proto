@@ -18,8 +18,9 @@ message Subreddit {
     bytes avatar = 4;
     string rules = 5;
     google.protobuf.Timestamp created_at = 6;
-    repeated User users = 7;
-    repeated User admins = 8;
+    repeated Post posts = 7;
+    repeated User users = 8;
+    repeated User admins = 9;
 }
 
 message User {
@@ -63,8 +64,8 @@ message Comment {
 service SubredditGRPC {
     // we only need the subreddit handle (string)
     // but protobuf doesn't support primitives as paramaters 
-    rpc GetSubreddit(Subreddit) returns (Subreddit);
-    rpc CreateSubreddit(Subreddit) returns (Subreddit);
+    rpc GetSubreddit(SubredditInfo) returns (Subreddit);
+    rpc CreateSubreddit(SubredditInfo) returns (Subreddit);
     rpc GetSubreddits(google.protobuf.Empty) returns (SubredditList);
 }
 
@@ -72,17 +73,17 @@ service PostGRPC {
     rpc GetPost(PostInfo) returns (Post);
     rpc CreatPost(PostInfo) returns (Post);
     rpc GetPosts(google.protobuf.Empty) returns (PostList);
-    rpc Pin(Post) returns (Post);
-    rpc Unpin(Post) returns (Post);
-    rpc UpVote(Post) returns (Post);
-    rpc DownVote(Post) returns (Post);
+    rpc Pin(PostInfo) returns (Post);
+    rpc Unpin(PostInfo) returns (Post);
+    rpc UpVote(PostInfo) returns (Post);
+    rpc DownVote(PostInfo) returns (Post);
 }
  
 service UserGRPC {
-    rpc GetUser(User) returns (User);
-    rpc CreateUser(User) returns (User);
-    rpc IncreaseKarma(User) returns (User);
-    rpc DecreaseKarma(User) returns (User);
+    rpc GetUser(UserInfo) returns (User);
+    rpc CreateUser(UserInfo) returns (User);
+    rpc IncreaseKarma(UserInfo) returns (User);
+    rpc DecreaseKarma(UserInfo) returns (User);
     rpc Follow(UserFollowage) returns (google.protobuf.Empty);
     rpc Unfollow(UserFollowage) returns (google.protobuf.Empty);
     rpc JoinSubreddit(UserSubredditMembership) returns (google.protobuf.Empty);
@@ -91,8 +92,8 @@ service UserGRPC {
 
 service CommentGRPC {
     rpc AddComment(CommentInfo) returns (Comment);
-    rpc UpVote(Comment) returns (Comment);
-    rpc DownVote(Comment) returns (Comment);
+    rpc UpVote(CommentInfo) returns (Comment);
+    rpc DownVote(CommentInfo) returns (Comment);
 }
 
 // custom arg & reply messages for the services defined above 
@@ -108,12 +109,27 @@ message TwoPhaseCommitInfo {
     bool twopc_enabled = 1;
     string transaction_id = 2;
 }
+message MessageInfo {
+    string id = 1;
+    google.protobuf.Timestamp sent_since = 2;
+}
 
 message PostInfo {
     Post post = 1;
     int32 user_shard = 2;
     int32 subreddit_shard = 3;
     TwoPhaseCommitInfo twopc_info = 4;
+    MessageInfo message_info = 5;
+}
+
+message SubredditInfo {
+    Subreddit subreddit = 1;
+    MessageInfo message_info = 2;
+}
+
+message UserInfo {
+    User user = 1;
+    MessageInfo message_info = 2;
 }
 
 message CommentInfo {
@@ -121,14 +137,17 @@ message CommentInfo {
     int32 user_shard = 2;
     int32 subreddit_shard = 3;
     TwoPhaseCommitInfo twopc_info = 4;
+    MessageInfo message_info = 5;
 }
 
 message UserFollowage {
     string from_handle = 1;
     string to_handle = 2;
+    MessageInfo message_info = 3;
 }
 
 message UserSubredditMembership {
     string user_handle = 1;
     string subreddit_handle = 2;
+    MessageInfo message_info = 3;
 }

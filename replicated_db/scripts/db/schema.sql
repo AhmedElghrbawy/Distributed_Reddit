@@ -63,8 +63,8 @@ CREATE TABLE IF NOT EXISTS Subreddit_Comments (
 	owner_handle VARCHAR(255) NOT NULL,
 	parent_comment_id UUID,
 	post_id UUID NOT NULL,
-	FOREIGN KEY (parent_comment_id) REFERENCES User_Comments(id),
-	FOREIGN KEY (post_id) REFERENCES User_Posts(id)
+	FOREIGN KEY (parent_comment_id) REFERENCES Subreddit_Comments(id),
+	FOREIGN KEY (post_id) REFERENCES Subreddit_Posts(id)
 );
 
 CREATE TABLE IF NOT EXISTS Post_Tags (

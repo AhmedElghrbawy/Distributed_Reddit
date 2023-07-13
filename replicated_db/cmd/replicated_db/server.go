@@ -31,8 +31,17 @@ type rdbServer struct {
 	pb.UnimplementedSubredditGRPCServer
 }
 
-type op struct {
-	query string
+type Op struct {
+	ExecutionFunction func() interface{}
+	Id                string
+}
+
+type replyInfo struct {
+	id string
+	// ready  bool
+	result interface{}
+	err    error
+	ch     (chan struct{})
 }
 
 const (

@@ -14,10 +14,9 @@ func UseSchema(schema string) {
 	PostTags = PostTags.FromSchema(schema)
 	SubredditComments = SubredditComments.FromSchema(schema)
 	SubredditPosts = SubredditPosts.FromSchema(schema)
+	SubredditUsers = SubredditUsers.FromSchema(schema)
 	Subreddits = Subreddits.FromSchema(schema)
-	UserAdminedSubreddits = UserAdminedSubreddits.FromSchema(schema)
 	UserComments = UserComments.FromSchema(schema)
-	UserJoinedSubreddits = UserJoinedSubreddits.FromSchema(schema)
 	UserPosts = UserPosts.FromSchema(schema)
 	Users = Users.FromSchema(schema)
 }

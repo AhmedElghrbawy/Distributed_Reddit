@@ -19,7 +19,7 @@ type SubredditPosts struct {
 	Image           *[]byte
 	CreatedAt       time.Time
 	NumberOfVotes   *int32
-	IsPinned        *bool
+	IsPinned        bool
 	OwnerHandle     string
 	SubredditHandle string
 }

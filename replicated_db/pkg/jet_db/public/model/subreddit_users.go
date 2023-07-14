@@ -10,5 +10,5 @@ package model
 type SubredditUsers struct {
 	UserHandle      string `sql:"primary_key"`
 	SubredditHandle string `sql:"primary_key"`
-	IsAdmin         *bool
+	IsAdmin         bool
 }

@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS User_Posts (
 	image BYTEA,
 	created_at TIMESTAMP NOT NULL,
 	number_of_votes INT,
-	is_pinned BOOl,
+	is_pinned BOOl NOT NULL,
 	owner_handle VARCHAR(255) NOT NULL,
 	subreddit_handle VARCHAR(255) NOT NULL,
 	FOREIGN KEY (owner_handle) REFERENCES Users(handle)
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS Subreddit_Posts (
 	image BYTEA,
 	created_at TIMESTAMP NOT NULL,
 	number_of_votes INT,
-	is_pinned BOOl,
+	is_pinned BOOl NOT NULL,
 	owner_handle VARCHAR(255) NOT NULL,
 	subreddit_handle VARCHAR(255) NOT NULL,
 	FOREIGN KEY (subreddit_handle) REFERENCES Subreddits(handle)
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS Post_Tags (
 CREATE TABLE IF NOT EXISTS Subreddit_Users (
 	user_handle VARCHAR(255),
 	subreddit_handle VARCHAR(255),
-	is_admin BOOL,
+	is_admin BOOL NOT NULL,
 	
 	PRIMARY KEY (user_handle, subreddit_handle)
 );

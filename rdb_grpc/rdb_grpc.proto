@@ -19,8 +19,8 @@ message Subreddit {
     string rules = 5;
     google.protobuf.Timestamp created_at = 6;
     repeated Post posts = 7;
-    repeated User users = 8;
-    repeated User admins = 9;
+    repeated string users_handles = 8;
+    repeated string admins_handles = 9;
 }
 
 message User {

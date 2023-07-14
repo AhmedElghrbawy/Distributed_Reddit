@@ -75,17 +75,10 @@ CREATE TABLE IF NOT EXISTS Post_Tags (
 );
 
 
-CREATE TABLE IF NOT EXISTS User_Joined_Subreddits (
+CREATE TABLE IF NOT EXISTS Subreddit_Users (
 	user_handle VARCHAR(255),
 	subreddit_handle VARCHAR(255),
-	
-	PRIMARY KEY (user_handle, subreddit_handle)
-);
-
-
-CREATE TABLE IF NOT EXISTS User_Admined_Subreddits (
-	user_handle VARCHAR(255),
-	subreddit_handle VARCHAR(255),
+	is_admin BOOL,
 	
 	PRIMARY KEY (user_handle, subreddit_handle)
 );

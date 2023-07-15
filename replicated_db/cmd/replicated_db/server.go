@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -10,6 +12,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/ahmedelghrbawy/replicated_db/pkg/raft"
 	pb "github.com/ahmedelghrbawy/replicated_db/pkg/rdb_grpc"
@@ -29,11 +32,20 @@ type rdbServer struct {
 	myAddress          netip.AddrPort
 
 	pb.UnimplementedSubredditGRPCServer
+
+	// needs to be locked
+	replyMap map[string]*replyInfo
 }
 
 type Op struct {
-	ExecutionFunction func() interface{}
+	Executer Executer
 	Id                string
+}
+
+type CommandNotExecutedError struct{}
+
+func (e *CommandNotExecutedError) Error() string {
+	return "command was not executed"
 }
 
 type replyInfo struct {
@@ -56,6 +68,8 @@ example: ./prog shardNum replicaNum
 func main() {
 	rdb := &rdbServer{}
 	rdb.applyCh = make(chan raft.ApplyMsg)
+	rdb.replyMap = make(map[string]*replyInfo)
+	gob.Register(&GetSubredditExecuter{})
 
 	parseCommandLineArgs(rdb)
 
@@ -91,9 +105,36 @@ func (rdb *rdbServer) applyCommands() {
 	for {
 		msg := <-rdb.applyCh
 
-		op := msg.Command
+		log.Println("got a msg back from raft")
 
-		log.Printf("got op back %s\n", string(op))
+		opBytes := msg.Command
+		dec := gob.NewDecoder(bytes.NewBuffer(opBytes))
+
+		var op Op
+
+		err := dec.Decode(&op)
+		if err != nil {
+			log.Fatal("decode error 1:", err)
+		}
+		fmt.Printf("decoded op returned from raft %v\n" ,op)
+
+		result, err := op.Executer.Execute(rdb)
+
+
+		
+		replyInfo, replyExists  := rdb.replyMap[op.Id]
+
+		if replyExists {
+			replyInfo.result = result
+			replyInfo.err = err
+			replyInfo.ch <- struct{}{}
+			select {
+			case replyInfo.ch <- struct{}{}:
+			case <-time.After(time.Second): // ? magic number
+			}
+		}
+		
+		// log.Printf("got op back %s\n", string(op))
 
 	}
 }

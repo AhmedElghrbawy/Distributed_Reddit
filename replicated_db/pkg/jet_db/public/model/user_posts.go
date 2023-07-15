@@ -18,7 +18,7 @@ type UserPosts struct {
 	Content         string
 	Image           *[]byte
 	CreatedAt       time.Time
-	NumberOfVotes   *int32
+	NumberOfVotes   int32
 	IsPinned        bool
 	OwnerHandle     string
 	SubredditHandle string

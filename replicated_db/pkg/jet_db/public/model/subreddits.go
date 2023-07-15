@@ -14,8 +14,8 @@ import (
 type Subreddits struct {
 	Handle    string `sql:"primary_key"`
 	Title     string
-	About     *string
+	About     string
 	Avatar    []byte
-	Rules     *string
+	Rules     string
 	CreatedAt time.Time
 }

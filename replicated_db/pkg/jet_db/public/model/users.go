@@ -15,6 +15,6 @@ type Users struct {
 	Handle      string `sql:"primary_key"`
 	DisplayName string
 	Avatar      []byte
-	Karma       *int32
+	Karma       int32
 	CreatedAt   time.Time
 }

@@ -15,7 +15,7 @@ type UserComments struct {
 	ID              uuid.UUID `sql:"primary_key"`
 	Content         string
 	Image           *[]byte
-	NumberOfVotes   *int32
+	NumberOfVotes   int32
 	OwnerHandle     string
 	ParentCommentID *uuid.UUID
 	PostID          uuid.UUID

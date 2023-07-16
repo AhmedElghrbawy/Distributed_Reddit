@@ -14,7 +14,7 @@ var debugStart time.Time = time.Now()
 var debugVerbosity int
 
 // Debugging
-var debug int = 1
+var debug int = 0
 
 type logTopic string
 

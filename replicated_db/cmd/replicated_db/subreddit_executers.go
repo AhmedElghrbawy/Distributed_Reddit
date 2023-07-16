@@ -1,14 +1,21 @@
 package main
 
 import (
+	context "context"
 	"database/sql"
+	"errors"
 	"log"
+	"time"
 
+	"github.com/ahmedelghrbawy/replicated_db/pkg/jet_db/public/model"
 	. "github.com/ahmedelghrbawy/replicated_db/pkg/jet_db/public/table"
 	pb "github.com/ahmedelghrbawy/replicated_db/pkg/rdb_grpc"
 	. "github.com/go-jet/jet/v2/postgres"
 )
 
+const DurationTO = 1 * time.Second
+
+// returns (*SubredditDTO, error): the subreddit requestd or error
 type GetSubredditExecuter struct {
 	In_subreddit_info *pb.SubredditInfo
 }
@@ -21,7 +28,7 @@ func (ex *GetSubredditExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 	defer db.Close()
 
 	log.Printf("Preparing to execute GetSubreddit for subreddit {Handle: %s}\n",
-	ex.In_subreddit_info.Subreddit.Handle)
+		ex.In_subreddit_info.Subreddit.Handle)
 
 	stmt := SELECT(
 		Subreddits.AllColumns, SubredditPosts.AllColumns, SubredditComments.AllColumns,
@@ -39,16 +46,87 @@ func (ex *GetSubredditExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 
 	result := SubredditDTO{}
 
-	
 	err = stmt.Query(db, &result)
-	
-	
+
 	if err != nil {
 		log.Printf("GetSubreddit {Handle: %s} command failed %v\n", ex.In_subreddit_info.Subreddit.Handle, err)
 		return &SubredditDTO{}, err
 	}
 
 	log.Printf("GetSubreddit {Handle: %s} command completed\n", ex.In_subreddit_info.Subreddit.Handle)
-	
+
 	return &result, nil
+}
+
+// returns (bool, error): true if subreddit created successfully or error
+type CreateSubredditExecuter struct {
+	In_subreddit_info *pb.SubredditInfo
+}
+
+func (ex *CreateSubredditExecuter) Execute(rdb *rdbServer) (interface{}, error) {
+	db, err := sql.Open("postgres", rdb.dbConnectionStr)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	log.Printf("Preparing to execute CreateSubreddit for subreddit {Handle: %s}\n",
+		ex.In_subreddit_info.Subreddit.Handle)
+	ctx, cancel := context.WithTimeout(context.Background(), DurationTO)
+	defer cancel()
+
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return false, errors.New("couldn't start create subreddit transaction")
+	}
+	defer tx.Rollback()
+
+	// insert subreddit
+	subredditModel := model.Subreddits{
+		Handle:    ex.In_subreddit_info.Subreddit.Handle,
+		Title:     ex.In_subreddit_info.Subreddit.Title,
+		About:     ex.In_subreddit_info.Subreddit.About,
+		Avatar:    ex.In_subreddit_info.Subreddit.Avatar,
+		Rules:     ex.In_subreddit_info.Subreddit.Rules,
+		CreatedAt: ex.In_subreddit_info.Subreddit.CreatedAt.AsTime(),
+	}
+
+	subredditInsertStmt := Subreddits.INSERT(Subreddits.AllColumns).
+		MODEL(subredditModel)
+
+	_, err = subredditInsertStmt.ExecContext(ctx, tx)
+
+	if err != nil {
+		log.Printf("failed to insert subreddit {handle: %s}. rolling back tx\n", ex.In_subreddit_info.Subreddit.Handle)
+		return false, err
+	}
+
+	// insert admin
+	var admins []model.SubredditUsers
+
+	for _, adminHandle := range ex.In_subreddit_info.Subreddit.AdminsHandles {
+		admins = append(admins, model.SubredditUsers{
+			UserHandle:      adminHandle,
+			SubredditHandle: ex.In_subreddit_info.Subreddit.Handle,
+			IsAdmin:         true,
+		})
+	}
+
+	adminInsertStmt := SubredditUsers.INSERT(SubredditUsers.AllColumns).MODELS(admins)
+
+	_, err = adminInsertStmt.ExecContext(ctx, tx)
+
+	if err != nil {
+		log.Printf("failed to insert admins %v for subreddit {handle: %s}. rolling back tx\n", admins, ex.In_subreddit_info.Subreddit.Handle)
+		return false, err
+	}
+
+	// Commit the transaction.
+	if err = tx.Commit(); err != nil {
+		return false, errors.New("failed to commit create subreddit tx")
+	}
+
+	log.Printf("successfully commited tx for creating subreddit {Handle: %s}\n", ex.In_subreddit_info.Subreddit.Handle)
+
+	return true, nil
 }

@@ -1,4 +1,0 @@
-obj/Debug/net7.0/RdbGrpc.cs \
-obj/Debug/net7.0/RdbGrpcGrpc.cs: /home/ahmed/.nuget/packages/grpc.tools/2.56.0/build/native/include/google/protobuf/timestamp.proto\
- /home/ahmed/.nuget/packages/grpc.tools/2.56.0/build/native/include/google/protobuf/empty.proto\
- ../rdb_proto/rdb_grpc.proto

@@ -66,24 +66,27 @@ const (
 example: ./prog shardNum replicaNum
 */
 func main() {
+	// initialize rdb
 	rdb := &rdbServer{}
 	rdb.applyCh = make(chan raft.ApplyMsg)
 	rdb.replyMap = make(map[string]*replyInfo)
-	gob.Register(&GetSubredditExecuter{})
 
 	parseCommandLineArgs(rdb)
-
 	log.Printf("replicated DB server {shardNum: %d, replicaNum: %v} started\n", rdb.shardNum, rdb.replicaNum)
-
 	parseConfigFile(rdb)
 
 	db_name := fmt.Sprintf("S%d_R%d", rdb.shardNum, rdb.replicaNum)
 	db_pass := os.Getenv("PSQL_PASS")
 	rdb.dbConnectionStr = fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		db_host, db_port, db_user, db_pass, db_name)
-
+	"password=%s dbname=%s sslmode=disable",
+	db_host, db_port, db_user, db_pass, db_name)
+	
 	rdb.rf = raft.Make(rdb.raftPeersAddresses, rdb.replicaNum, rdb.applyCh)
+
+	// register executers
+	gob.Register(&GetSubredditExecuter{})
+
+
 	go rdb.applyCommands()
 
 	lis, err := net.Listen("tcp", rdb.myAddress.String())

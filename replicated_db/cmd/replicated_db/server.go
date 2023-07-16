@@ -32,6 +32,7 @@ type rdbServer struct {
 	myAddress          netip.AddrPort
 
 	pb.UnimplementedSubredditGRPCServer
+	pb.UnimplementedPostGRPCServer
 
 	// needs to be locked
 	replyMap map[string]*replyInfo
@@ -98,6 +99,7 @@ func main() {
 
 	grpc_server := grpc.NewServer()
 	pb.RegisterSubredditGRPCServer(grpc_server, rdb)
+	pb.RegisterPostGRPCServer(grpc_server, rdb)
 
 	if err := grpc_server.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)

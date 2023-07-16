@@ -15,7 +15,7 @@ import (
 
 const DurationTO = 1 * time.Second
 
-// returns (*SubredditDTO, error): the subreddit requestd or error
+// returns (*SubredditDTO, error): the subreddit requested or error
 type GetSubredditExecuter struct {
 	In_subreddit_info *pb.SubredditInfo
 }

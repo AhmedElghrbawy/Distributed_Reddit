@@ -40,7 +40,7 @@ type rdbServer struct {
 
 type Op struct {
 	Executer Executer
-	Id                string
+	Id       string
 }
 
 type CommandNotExecutedError struct{}
@@ -79,16 +79,16 @@ func main() {
 	db_name := fmt.Sprintf("S%d_R%d", rdb.shardNum, rdb.replicaNum)
 	db_pass := os.Getenv("PSQL_PASS")
 	rdb.dbConnectionStr = fmt.Sprintf("host=%s port=%d user=%s "+
-	"password=%s dbname=%s sslmode=disable",
-	db_host, db_port, db_user, db_pass, db_name)
-	
+		"password=%s dbname=%s sslmode=disable",
+		db_host, db_port, db_user, db_pass, db_name)
+
 	rdb.rf = raft.Make(rdb.raftPeersAddresses, rdb.replicaNum, rdb.applyCh)
 
 	// register executers
 	gob.Register(&GetSubredditExecuter{})
 	gob.Register(&CreateSubredditExecuter{})
 	gob.Register(&GetSubredditsHandlesExecuter{})
-
+	gob.Register(&GetPostExecuter{})
 
 	go rdb.applyCommands()
 
@@ -123,13 +123,11 @@ func (rdb *rdbServer) applyCommands() {
 		if err != nil {
 			log.Fatal("decode error 1:", err)
 		}
-		fmt.Printf("decoded op returned from raft %v\n" ,op)
+		fmt.Printf("decoded op returned from raft %v\n", op)
 
 		result, err := op.Executer.Execute(rdb)
 
-
-		
-		replyInfo, replyExists  := rdb.replyMap[op.Id]
+		replyInfo, replyExists := rdb.replyMap[op.Id]
 
 		if replyExists {
 			replyInfo.result = result
@@ -140,7 +138,7 @@ func (rdb *rdbServer) applyCommands() {
 			case <-time.After(time.Second): // ? magic number
 			}
 		}
-		
+
 		// log.Printf("got op back %s\n", string(op))
 
 	}

@@ -66,13 +66,13 @@ service SubredditGRPC {
     // but protobuf doesn't support primitives as paramaters 
     rpc GetSubreddit(SubredditInfo) returns (Subreddit);
     rpc CreateSubreddit(SubredditInfo) returns (Subreddit);
-    rpc GetSubreddits(google.protobuf.Empty) returns (SubredditList);
+    rpc GetSubredditsHandles(MessageInfo) returns (SubredditList);
 }
 
 service PostGRPC {
     rpc GetPost(PostInfo) returns (Post);
     rpc CreatPost(PostInfo) returns (Post);
-    rpc GetPosts(google.protobuf.Empty) returns (PostList);
+    rpc GetPosts(MessageInfo) returns (PostList);
     rpc Pin(PostInfo) returns (Post);
     rpc Unpin(PostInfo) returns (Post);
     rpc UpVote(PostInfo) returns (Post);

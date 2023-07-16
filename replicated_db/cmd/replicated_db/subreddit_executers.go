@@ -130,3 +130,39 @@ func (ex *CreateSubredditExecuter) Execute(rdb *rdbServer) (interface{}, error) 
 
 	return true, nil
 }
+
+// returns (*[]SubredditDTO, error): a slice of subreddit handles on this shard or error
+type GetSubredditsHandlesExecuter struct {
+	
+}
+
+
+func (ex *GetSubredditsHandlesExecuter) Execute(rdb *rdbServer) (interface{}, error) {
+	db, err := sql.Open("postgres", rdb.dbConnectionStr)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	log.Printf("Preparing to execute GetSubreddits Handles\n")
+
+
+	stmt := SELECT(
+		Subreddits.Handle,
+	).FROM(Subreddits)
+
+	result := []SubredditDTO{}
+
+
+	err = stmt.Query(db, &result)
+
+	if err != nil {
+		log.Printf("GetSubreddit Handles command failed %v\n", err)
+		return &result, err
+	}
+
+	log.Printf("GetSubreddits Handles command completed\n")
+
+	return &result, nil
+}
+

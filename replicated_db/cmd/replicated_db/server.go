@@ -89,6 +89,7 @@ func main() {
 	gob.Register(&CreateSubredditExecuter{})
 	gob.Register(&GetSubredditsHandlesExecuter{})
 	gob.Register(&GetPostExecuter{})
+	gob.Register(&CreatePostExecuter{})
 
 	go rdb.applyCommands()
 

@@ -33,18 +33,24 @@ var client = new PostGRPC.PostGRPCClient(channel);
 
 var postInfo = new PostInfo{
     Post = new Post {
-        Id = "9c8c468c-f180-46f3-ad63-af5832e17d41",
+        Id = "9c8c468c-f180-46f3-ad63-af5832e17d43",
+        Title = "Hey post",
+        OwnerHandle = "Ahmed",
+        SubredditHandle = "English",
     },
     MessageInfo = new MessageInfo {
         Id = "yeeet"
     },
     SubredditShard = 0,
     UserShard = 1,
+    TwopcInfo = new TwoPhaseCommitInfo {
+        TransactionId = "Ay",
+    }
 };
 
 // System.Console.WriteLine(subInfo);
 
-var reply = await client.GetPostAsync(postInfo);
+var reply = await client.CreatePostAsync(postInfo);
 
 System.Console.WriteLine(reply);
 

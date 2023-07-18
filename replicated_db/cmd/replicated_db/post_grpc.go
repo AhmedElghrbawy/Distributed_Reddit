@@ -160,12 +160,51 @@ func (rdb *rdbServer) GetPosts(ctx context.Context, message_info *pb.MessageInfo
 	}
 }
 
-func (rdb *rdbServer) Pin(ctx context.Context, in_post_info *pb.PostInfo) (*pb.Post, error) {
-	return nil, nil
-}
+func (rdb *rdbServer) PinUnpin(ctx context.Context, in_post_info *pb.PostInfo) (*pb.Post, error) {
+	op := Op{
+		Executer: &PinUnpinPostExecuter{In_post_info: in_post_info},
+		Id:       in_post_info.MessageInfo.Id,
+	}
 
-func (rdb *rdbServer) Unpin(ctx context.Context, in_post_info *pb.PostInfo) (*pb.Post, error) {
-	return nil, nil
+	replyInfo := replyInfo{
+		id:     in_post_info.MessageInfo.Id,
+		result: &PostDTO{},
+		err:    &CommandNotExecutedError{},
+		ch:     make(chan struct{}),
+	}
+
+	rdb.mu.Lock()
+	rdb.replyMap[replyInfo.id] = &replyInfo
+	rdb.mu.Unlock()
+
+	var encodedOp bytes.Buffer
+	enc := gob.NewEncoder(&encodedOp)
+
+	err := enc.Encode(op)
+	if err != nil {
+		log.Fatal("encode error:", err)
+	}
+
+	_, _, isLeader := rdb.rf.Start(encodedOp.Bytes())
+
+	if !isLeader {
+		rdb.mu.Lock()
+		delete(rdb.replyMap, replyInfo.id)
+		rdb.mu.Unlock()
+		// TODO: return a reply status that indicates wrong leader
+		return nil, errors.New("not the leader")
+	}
+
+	select {
+	case <-replyInfo.ch:
+		if replyInfo.err == nil {
+			return replyInfo.result.(*PostDTO).mapToProto(), nil
+		} else {
+			return &pb.Post{}, replyInfo.err
+		}
+	case <-time.After(time.Second): // ? magic number
+		return nil, errors.New("timed out")
+	}
 }
 
 func (rdb *rdbServer) UpVote(ctx context.Context, in_post_info *pb.PostInfo) (*pb.Post, error) {

@@ -73,8 +73,7 @@ service PostGRPC {
     rpc GetPost(PostInfo) returns (Post);
     rpc CreatePost(PostInfo) returns (Post);
     rpc GetPosts(MessageInfo) returns (PostList);
-    rpc Pin(PostInfo) returns (Post);
-    rpc Unpin(PostInfo) returns (Post);
+    rpc PinUnpin(PostInfo) returns (Post);
     rpc UpVote(PostInfo) returns (Post);
     rpc DownVote(PostInfo) returns (Post);
 }

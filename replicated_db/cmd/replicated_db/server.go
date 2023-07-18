@@ -92,6 +92,7 @@ func main() {
 	gob.Register(&GetPostExecuter{})
 	gob.Register(&CreatePostExecuter{})
 	gob.Register(&GetPostsExecuter{})
+	gob.Register(&PinUnpinPostExecuter{})
 
 	gob.Register(&CommitExecuter{})
 	gob.Register(&RollbackExecuter{})

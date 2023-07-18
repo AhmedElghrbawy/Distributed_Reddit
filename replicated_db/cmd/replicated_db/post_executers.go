@@ -246,3 +246,43 @@ func (ex *GetPostsExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 
 	return &result, nil
 }
+
+
+// returns (*PostDTO, error): the subreddit post after pinning/unpinning it or error
+type PinUnpinPostExecuter struct {
+	In_post_info *pb.PostInfo
+}
+
+func (ex *PinUnpinPostExecuter) Execute(rdb *rdbServer) (interface{}, error) {
+	db, err := sql.Open("postgres", rdb.dbConnectionStr)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	log.Printf("Preparing to execute pin/unpin for post {Id: %s}\n", ex.In_post_info.Post.Id)
+
+	m := model.SubredditPosts{
+		IsPinned: ex.In_post_info.Post.IsPinned,
+	}
+
+	stmt := SubredditPosts.
+		UPDATE(SubredditPosts.IsPinned).
+		MODEL(m).
+		WHERE(CAST(table.SubredditPosts.ID).AS_TEXT().EQ(String(ex.In_post_info.Post.Id))).
+		RETURNING(SubredditPosts.AllColumns)
+
+	result := PostDTO{}
+
+
+	err = stmt.Query(db, &result)
+
+	if err != nil {
+		log.Printf("pin/unpin post {Id: %s} command failed %v\n", ex.In_post_info.Post.Id, err)
+		return &result, err
+	}
+
+	log.Printf("pin/unpin command completed\n")
+
+	return &result, nil
+}

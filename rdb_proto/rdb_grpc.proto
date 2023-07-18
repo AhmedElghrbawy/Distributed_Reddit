@@ -96,6 +96,11 @@ service CommentGRPC {
     rpc DownVote(CommentInfo) returns (Comment);
 }
 
+service TwoPhaseCommitGRPC {
+    rpc Commit(TwoPhaseCommitInfo) returns (google.protobuf.Empty);
+    rpc Rollback(TwoPhaseCommitInfo) returns (google.protobuf.Empty);
+}
+
 // custom arg & reply messages for the services defined above 
 message SubredditList {
     repeated Subreddit subreddits = 1;

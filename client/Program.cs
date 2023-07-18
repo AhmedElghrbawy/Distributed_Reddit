@@ -14,7 +14,8 @@ var handler = new HttpClientHandler
 
 using var channel = GrpcChannel.ForAddress("http://localhost:50052");
 
-var client = new PostGRPC.PostGRPCClient(channel);
+var postClient = new PostGRPC.PostGRPCClient(channel);
+var twopcClient = new TwoPhaseCommitGRPC.TwoPhaseCommitGRPCClient(channel);
 
 // var subInfo = new SubredditInfo{
 //     Subreddit = new Subreddit{
@@ -33,8 +34,8 @@ var client = new PostGRPC.PostGRPCClient(channel);
 
 var postInfo = new PostInfo{
     Post = new Post {
-        Id = "9c8c468c-f180-46f3-ad63-af5832e17d43",
-        Title = "Hey post",
+        Id = "9c8c468c-f180-46f3-ad63-af2832e17d12",
+        Title = "asdfpa",
         OwnerHandle = "Ahmed",
         SubredditHandle = "English",
     },
@@ -44,15 +45,21 @@ var postInfo = new PostInfo{
     SubredditShard = 0,
     UserShard = 1,
     TwopcInfo = new TwoPhaseCommitInfo {
-        TransactionId = "Ay",
+        TransactionId = "bb",
     }
+};
+
+var twopcInfo = new TwoPhaseCommitInfo {
+        TransactionId = "bb",
 };
 
 // System.Console.WriteLine(subInfo);
 
-var reply = await client.CreatePostAsync(postInfo);
+// var reply = await postClient.CreatePostAsync(postInfo);
 
-System.Console.WriteLine(reply);
+var reply = await twopcClient.RollbackAsync(twopcInfo);
+
+// System.Console.WriteLine(reply);
 
 
 // await Task.Delay(1000);

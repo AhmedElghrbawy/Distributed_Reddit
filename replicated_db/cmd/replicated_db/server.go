@@ -33,6 +33,7 @@ type rdbServer struct {
 
 	pb.UnimplementedSubredditGRPCServer
 	pb.UnimplementedPostGRPCServer
+	pb.UnimplementedTwoPhaseCommitGRPCServer
 
 	// needs to be locked
 	replyMap map[string]*replyInfo
@@ -90,6 +91,8 @@ func main() {
 	gob.Register(&GetSubredditsHandlesExecuter{})
 	gob.Register(&GetPostExecuter{})
 	gob.Register(&CreatePostExecuter{})
+	gob.Register(&CommitExecuter{})
+	gob.Register(&RollbackExecuter{})
 
 	go rdb.applyCommands()
 
@@ -101,7 +104,8 @@ func main() {
 	grpc_server := grpc.NewServer()
 	pb.RegisterSubredditGRPCServer(grpc_server, rdb)
 	pb.RegisterPostGRPCServer(grpc_server, rdb)
-
+	pb.RegisterTwoPhaseCommitGRPCServer(grpc_server, rdb)
+	
 	if err := grpc_server.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
@@ -128,8 +132,11 @@ func (rdb *rdbServer) applyCommands() {
 
 		result, err := op.Executer.Execute(rdb)
 
+		rdb.mu.Lock()
 		replyInfo, replyExists := rdb.replyMap[op.Id]
+		rdb.mu.Unlock()
 
+		
 		if replyExists {
 			replyInfo.result = result
 			replyInfo.err = err

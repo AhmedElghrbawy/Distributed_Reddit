@@ -208,3 +208,41 @@ func (ex *CreatePostExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 	return true, nil
 
 }
+
+// returns (*[]PostDTO, error): a slice of subreddit post with tags on this shard or error
+type GetPostsExecuter struct {
+	
+}
+
+func (ex *GetPostsExecuter) Execute(rdb *rdbServer) (interface{}, error) {
+	db, err := sql.Open("postgres", rdb.dbConnectionStr)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	log.Printf("Preparing to execute GetPosts\n")
+
+
+	stmt := SELECT(
+		SubredditPosts.AllColumns, SubredditComments.AllColumns,
+		PostTags.TagName,
+	).FROM(SubredditPosts.
+		LEFT_JOIN(SubredditComments, SubredditPosts.ID.EQ(SubredditComments.PostID)).
+		LEFT_JOIN(PostTags, SubredditPosts.ID.EQ(PostTags.PostID)),
+	)
+
+	result := []PostDTO{}
+
+
+	err = stmt.Query(db, &result)
+
+	if err != nil {
+		log.Printf("getPosts command failed %v\n", err)
+		return &result, err
+	}
+
+	log.Printf("getPosts command completed\n")
+
+	return &result, nil
+}

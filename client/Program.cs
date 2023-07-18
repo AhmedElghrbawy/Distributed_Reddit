@@ -55,11 +55,11 @@ var twopcInfo = new TwoPhaseCommitInfo {
 
 // System.Console.WriteLine(subInfo);
 
-// var reply = await postClient.CreatePostAsync(postInfo);
+var reply = await postClient.GetPostsAsync(new MessageInfo{Id = "ay"});
 
-var reply = await twopcClient.RollbackAsync(twopcInfo);
+// var reply = await twopcClient.RollbackAsync(twopcInfo);
 
-// System.Console.WriteLine(reply);
+System.Console.WriteLine(reply);
 
 
 // await Task.Delay(1000);

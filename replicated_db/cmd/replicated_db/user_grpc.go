@@ -58,11 +58,53 @@ func (rdb *rdbServer) CreateUser(ctx context.Context, in_user_info *pb.UserInfo)
 }
 
 func (rdb *rdbServer) IncreaseKarma(ctx context.Context, in_user_info *pb.UserInfo) (*pb.User, error) {
-	return nil, nil
+	op := Op{
+		Executer: &ChangeKarmaValueForUserExecuter{In_user_info: in_user_info, ValueToAdd: 1},
+		Id:       in_user_info.MessageInfo.Id,
+	}
+
+	submited, replyInfo := rdb.submitOperationToRaft(op)
+
+	if !submited {
+		return nil, errors.New("not the leader")
+	}
+
+	select {
+	case <-replyInfo.ch:
+		if replyInfo.err == nil {
+			in_user_info.User.Karma = replyInfo.result.(int32)
+			return in_user_info.User, nil
+		} else {
+			return &pb.User{}, replyInfo.err
+		}
+	case <-time.After(time.Second): // ? magic number
+		return nil, errors.New("timed out")
+	}
 }
 
 func (rdb *rdbServer) DecreaseKarma(ctx context.Context, in_user_info *pb.UserInfo) (*pb.User, error) {
-	return nil, nil
+	op := Op{
+		Executer: &ChangeKarmaValueForUserExecuter{In_user_info: in_user_info, ValueToAdd: -1},
+		Id:       in_user_info.MessageInfo.Id,
+	}
+
+	submited, replyInfo := rdb.submitOperationToRaft(op)
+
+	if !submited {
+		return nil, errors.New("not the leader")
+	}
+
+	select {
+	case <-replyInfo.ch:
+		if replyInfo.err == nil {
+			in_user_info.User.Karma = replyInfo.result.(int32)
+			return in_user_info.User, nil
+		} else {
+			return &pb.User{}, replyInfo.err
+		}
+	case <-time.After(time.Second): // ? magic number
+		return nil, errors.New("timed out")
+	}
 }
 
 func (rdb *rdbServer) Follow(ctx context.Context, user_followage_info *pb.UserFollowage) (*emptypb.Empty, error) {

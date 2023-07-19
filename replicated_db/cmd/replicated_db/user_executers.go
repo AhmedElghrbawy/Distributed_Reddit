@@ -52,13 +52,10 @@ func (ex *GetUserExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 	return &result, nil
 }
 
-
 // returns (bool, error): true if user created successfully or error
 type CreateUserExecuter struct {
 	In_user_info *pb.UserInfo
 }
-
-
 
 func (ex *CreateUserExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 	db, err := sql.Open("postgres", rdb.dbConnectionStr)
@@ -70,12 +67,12 @@ func (ex *CreateUserExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 	log.Printf("Preparing to execute CreateUser for User {Id: %s}\n",
 		ex.In_user_info.User.Handle)
 
-	userModel := model.Users {
-		Handle: ex.In_user_info.User.Handle,
+	userModel := model.Users{
+		Handle:      ex.In_user_info.User.Handle,
 		DisplayName: ex.In_user_info.User.DisplayName,
-		Avatar: ex.In_user_info.User.Avatar,
-		Karma: ex.In_user_info.User.Karma,
-		CreatedAt: ex.In_user_info.User.CreatedAt.AsTime(),
+		Avatar:      ex.In_user_info.User.Avatar,
+		Karma:       ex.In_user_info.User.Karma,
+		CreatedAt:   ex.In_user_info.User.CreatedAt.AsTime(),
 	}
 
 	userInsertStmt := Users.INSERT(Users.AllColumns).
@@ -88,5 +85,56 @@ func (ex *CreateUserExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 		return false, err
 	}
 
+	log.Printf("create user command completed\n")
 	return true, nil
+}
+
+// returns (int, error): the new karma value for the user or error
+type ChangeKarmaValueForUserExecuter struct {
+	In_user_info *pb.UserInfo
+	ValueToAdd   int
+}
+
+func (ex *ChangeKarmaValueForUserExecuter) Execute(rdb *rdbServer) (interface{}, error) {
+	db, err := sql.Open("postgres", rdb.dbConnectionStr)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	log.Printf("Preparing to execute change karma for User {Id: %s}\n",
+		ex.In_user_info.User.Handle)
+
+	curKarmaStmt := SELECT(Users.Karma).FROM(Users).WHERE(Users.Handle.EQ(String(ex.In_user_info.User.Handle)))
+
+	curUser := UserDTO{}
+	err = curKarmaStmt.Query(db, &curUser)
+
+	if err != nil {
+		log.Printf("change karma value for User {handle: %s} command failed %v\n", ex.In_user_info.User.Handle, err)
+		return 0, err
+	}
+	curKarma := curUser.Karma
+
+	u := model.Users{
+		Karma: curKarma + int32(ex.ValueToAdd),
+	}
+
+	updateKarmaStmt := Users.
+		UPDATE(Users.Karma).
+		MODEL(u).
+		WHERE(Users.Handle.EQ(String(ex.In_user_info.User.Handle))).
+		RETURNING(Users.Karma)
+
+	result := UserDTO{}
+
+	err = updateKarmaStmt.Query(db, &result)
+
+	if err != nil {
+		log.Printf("change karma value for User {handle: %s} command failed %v\n", ex.In_user_info.User.Handle, err)
+		return 0, err
+	}
+
+	log.Printf("change karma value for user command completed\n")
+	return result.Karma, nil
 }

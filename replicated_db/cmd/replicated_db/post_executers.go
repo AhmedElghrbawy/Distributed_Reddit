@@ -318,14 +318,14 @@ func (ex *ChangeVoteValueForPostExecuter) Execute(rdb *rdbServer) (interface{}, 
 	if isUserPost {
 		err = ustmt.Query(db, &curPost)
 		if err != nil {
-			log.Printf("chang vote value for post {Id: %s} command failed %v\n", ex.In_post_info.Post.Id, err)
+			log.Printf("change vote value for post {Id: %s} command failed %v\n", ex.In_post_info.Post.Id, err)
 			return 0, err
 		}
 		curNumVotes = curPost.NumberOfVotes
 	} else if isSubredditPost {
 		err = sstmt.Query(db, &curPost)
 		if err != nil {
-			log.Printf("chang vote value for post {Id: %s} command failed %v\n", ex.In_post_info.Post.Id, err)
+			log.Printf("change vote value for post {Id: %s} command failed %v\n", ex.In_post_info.Post.Id, err)
 			return 0, err
 		}
 		curNumVotes = curPost.NumberOfVotes

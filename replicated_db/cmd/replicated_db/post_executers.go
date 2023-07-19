@@ -211,7 +211,6 @@ func (ex *CreatePostExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 
 // returns (*[]PostDTO, error): a slice of subreddit post with tags on this shard or error
 type GetPostsExecuter struct {
-	
 }
 
 func (ex *GetPostsExecuter) Execute(rdb *rdbServer) (interface{}, error) {
@@ -223,7 +222,6 @@ func (ex *GetPostsExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 
 	log.Printf("Preparing to execute GetPosts\n")
 
-
 	stmt := SELECT(
 		SubredditPosts.AllColumns, SubredditComments.AllColumns,
 		PostTags.TagName,
@@ -233,7 +231,6 @@ func (ex *GetPostsExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 	)
 
 	result := []PostDTO{}
-
 
 	err = stmt.Query(db, &result)
 
@@ -246,7 +243,6 @@ func (ex *GetPostsExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 
 	return &result, nil
 }
-
 
 // returns (*PostDTO, error): the subreddit post after pinning/unpinning it or error
 type PinUnpinPostExecuter struct {
@@ -274,7 +270,6 @@ func (ex *PinUnpinPostExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 
 	result := PostDTO{}
 
-
 	err = stmt.Query(db, &result)
 
 	if err != nil {
@@ -285,4 +280,99 @@ func (ex *PinUnpinPostExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 	log.Printf("pin/unpin command completed\n")
 
 	return &result, nil
+}
+
+// returns (int, error): the new number of votes for the post or error
+type ChangeVoteValueForPostExecuter struct {
+	In_post_info *pb.PostInfo
+	ValueToAdd   int
+}
+
+func (ex *ChangeVoteValueForPostExecuter) Execute(rdb *rdbServer) (interface{}, error) {
+	db, err := sql.Open("postgres", rdb.dbConnectionStr)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	log.Printf("Preparing to change vote value for post {Id: %s}\n", ex.In_post_info.Post.Id)
+
+	isUserPost := ex.In_post_info.UserShard == int32(rdb.shardNum)
+	isSubredditPost := ex.In_post_info.SubredditShard == int32(rdb.shardNum)
+
+	ustmt := SELECT(
+		UserPosts.NumberOfVotes.AS("SubredditPosts.NumberOfVotes"),
+	).FROM(UserPosts).WHERE(
+		CAST(table.UserPosts.ID).AS_TEXT().EQ(String(ex.In_post_info.Post.Id)),
+	)
+
+	sstmt := SELECT(
+		SubredditPosts.NumberOfVotes,
+	).FROM(SubredditPosts).WHERE(
+		CAST(table.SubredditPosts.ID).AS_TEXT().EQ(String(ex.In_post_info.Post.Id)),
+	)
+
+	var curNumVotes int32
+	curPost := PostDTO{}
+	if isUserPost {
+		err = ustmt.Query(db, &curPost)
+		if err != nil {
+			log.Printf("chang vote value for post {Id: %s} command failed %v\n", ex.In_post_info.Post.Id, err)
+			return 0, err
+		}
+		curNumVotes = curPost.NumberOfVotes
+	} else if isSubredditPost {
+		err = sstmt.Query(db, &curPost)
+		if err != nil {
+			log.Printf("chang vote value for post {Id: %s} command failed %v\n", ex.In_post_info.Post.Id, err)
+			return 0, err
+		}
+		curNumVotes = curPost.NumberOfVotes
+	}
+
+
+	subPost := model.SubredditPosts{
+		NumberOfVotes: curNumVotes + int32(ex.ValueToAdd),
+	}
+
+	subPostStmt := SubredditPosts.
+		UPDATE(SubredditPosts.NumberOfVotes).
+		MODEL(subPost).
+		WHERE(CAST(table.SubredditPosts.ID).AS_TEXT().EQ(String(ex.In_post_info.Post.Id))).
+		RETURNING(SubredditPosts.NumberOfVotes)
+
+	userPost := model.UserPosts{
+		NumberOfVotes: curNumVotes + int32(ex.ValueToAdd),
+	}
+
+	userPostStmt := UserPosts.
+		UPDATE(UserPosts.NumberOfVotes).
+		MODEL(userPost).
+		WHERE(CAST(table.UserPosts.ID).AS_TEXT().EQ(String(ex.In_post_info.Post.Id))).
+		RETURNING(UserPosts.NumberOfVotes.AS("SubredditPosts.NumberOfVotes"))
+
+	result := PostDTO{}
+
+	if isUserPost {
+		err = userPostStmt.Query(db, &result)
+
+		if err != nil {
+			log.Printf("change vote value for post {Id: %s} command failed %v\n", ex.In_post_info.Post.Id, err)
+			return 0, err
+		}
+	}
+
+	if isSubredditPost {
+		err = subPostStmt.Query(db, &result)
+
+		if err != nil {
+			log.Printf("change vote value for {Id: %s} command failed %v\n", ex.In_post_info.Post.Id, err)
+			return 0, err
+		}
+	}
+
+
+	log.Printf("change vote value for command completed\n")
+
+	return result.NumberOfVotes, nil
 }

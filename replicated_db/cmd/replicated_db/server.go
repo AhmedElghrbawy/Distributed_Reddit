@@ -87,15 +87,21 @@ func main() {
 	rdb.rf = raft.Make(rdb.raftPeersAddresses, rdb.replicaNum, rdb.applyCh)
 
 	// register executers
+	// subreddit
 	gob.Register(&GetSubredditExecuter{})
 	gob.Register(&CreateSubredditExecuter{})
 	gob.Register(&GetSubredditsHandlesExecuter{})
+
+	// post
 	gob.Register(&GetPostExecuter{})
 	gob.Register(&CreatePostExecuter{})
 	gob.Register(&GetPostsExecuter{})
 	gob.Register(&PinUnpinPostExecuter{})
 	gob.Register(&ChangeVoteValueForPostExecuter{})
+
+	// user
 	gob.Register(&GetUserExecuter{})
+	gob.Register(&CreateUserExecuter{})
 
 	gob.Register(&CommitExecuter{})
 	gob.Register(&RollbackExecuter{})

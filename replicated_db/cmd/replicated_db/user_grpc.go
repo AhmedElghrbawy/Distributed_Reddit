@@ -34,7 +34,27 @@ func (rdb *rdbServer) GetUser(ctx context.Context, in_user_info *pb.UserInfo) (*
 }
 
 func (rdb *rdbServer) CreateUser(ctx context.Context, in_user_info *pb.UserInfo) (*pb.User, error) {
-	return nil, nil
+	op := Op{
+		Executer: &CreateUserExecuter{In_user_info: in_user_info},
+		Id:       in_user_info.MessageInfo.Id,
+	}
+
+	submited, replyInfo := rdb.submitOperationToRaft(op)
+
+	if !submited {
+		return nil, errors.New("not the leader")
+	}
+
+	select {
+	case <-replyInfo.ch:
+		if replyInfo.err == nil {
+			return in_user_info.User, nil
+		} else {
+			return &pb.User{}, replyInfo.err
+		}
+	case <-time.After(time.Second): // ? magic number
+		return nil, errors.New("timed out")
+	}
 }
 
 func (rdb *rdbServer) IncreaseKarma(ctx context.Context, in_user_info *pb.UserInfo) (*pb.User, error) {

@@ -33,13 +33,13 @@ func (ex *GetPostExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 	var stmt SelectStatement
 	if ex.In_post_info.UserShard == int32(rdb.shardNum) {
 		stmt = SELECT(
-			UserPosts.AllColumns, UserComments.AllColumns,
+			AliasedUserPosts.AllColumns, AliasedUserComments.AllColumns,
 			PostTags.TagName,
-		).FROM(UserPosts.
-			LEFT_JOIN(UserComments, UserPosts.ID.EQ(UserComments.PostID)).
-			LEFT_JOIN(PostTags, UserPosts.ID.EQ(PostTags.PostID)),
+		).FROM(AliasedUserPosts.
+			LEFT_JOIN(AliasedUserComments, AliasedUserPosts.ID.EQ(AliasedUserComments.PostID)).
+			LEFT_JOIN(PostTags, AliasedUserPosts.ID.EQ(PostTags.PostID)),
 		).WHERE(
-			CAST(table.UserPosts.ID).AS_TEXT().EQ(String(ex.In_post_info.Post.Id)),
+			CAST(AliasedUserPosts.ID).AS_TEXT().EQ(String(ex.In_post_info.Post.Id)),
 		)
 	} else {
 		stmt = SELECT(
@@ -300,16 +300,17 @@ func (ex *ChangeVoteValueForPostExecuter) Execute(rdb *rdbServer) (interface{}, 
 	isUserPost := ex.In_post_info.UserShard == int32(rdb.shardNum)
 	isSubredditPost := ex.In_post_info.SubredditShard == int32(rdb.shardNum)
 
+
 	ustmt := SELECT(
-		UserPosts.NumberOfVotes.AS("SubredditPosts.NumberOfVotes"),
-	).FROM(UserPosts).WHERE(
-		CAST(table.UserPosts.ID).AS_TEXT().EQ(String(ex.In_post_info.Post.Id)),
+		AliasedUserPosts.NumberOfVotes,
+	).FROM(AliasedUserPosts).WHERE(
+		CAST(AliasedUserPosts.ID).AS_TEXT().EQ(String(ex.In_post_info.Post.Id)),
 	)
 
 	sstmt := SELECT(
 		SubredditPosts.NumberOfVotes,
 	).FROM(SubredditPosts).WHERE(
-		CAST(table.SubredditPosts.ID).AS_TEXT().EQ(String(ex.In_post_info.Post.Id)),
+		CAST(SubredditPosts.ID).AS_TEXT().EQ(String(ex.In_post_info.Post.Id)),
 	)
 
 	var curNumVotes int32
@@ -345,11 +346,11 @@ func (ex *ChangeVoteValueForPostExecuter) Execute(rdb *rdbServer) (interface{}, 
 		NumberOfVotes: curNumVotes + int32(ex.ValueToAdd),
 	}
 
-	userPostStmt := UserPosts.
-		UPDATE(UserPosts.NumberOfVotes).
+	userPostStmt := AliasedUserPosts.
+		UPDATE(AliasedUserPosts.NumberOfVotes).
 		MODEL(userPost).
-		WHERE(CAST(table.UserPosts.ID).AS_TEXT().EQ(String(ex.In_post_info.Post.Id))).
-		RETURNING(UserPosts.NumberOfVotes.AS("SubredditPosts.NumberOfVotes"))
+		WHERE(CAST(AliasedUserPosts.ID).AS_TEXT().EQ(String(ex.In_post_info.Post.Id))).
+		RETURNING(AliasedUserPosts.NumberOfVotes)
 
 	result := PostDTO{}
 

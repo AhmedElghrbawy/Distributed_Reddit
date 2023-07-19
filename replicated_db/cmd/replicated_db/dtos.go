@@ -4,11 +4,17 @@ import (
 	"github.com/ahmedelghrbawy/replicated_db/pkg/jet_db/public/model"
 	pb "github.com/ahmedelghrbawy/replicated_db/pkg/rdb_grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"github.com/ahmedelghrbawy/replicated_db/pkg/jet_db/public/table"
 )
 
 type CommentDTO struct {
 	model.SubredditComments
 }
+// since CommentDTO defines its embedded post as SubredditComments model,
+// trying to use jet QRM won't work for UserComments model.
+// the solution is to use table alias for UserComments table.
+// anywhere you need to map a UserComments to a CommentDTO, you should use this alias
+var AliasedUserComments = table.UserComments.AS("SubredditComments")
 
 func (comment_dto *CommentDTO) mapToProto() *pb.Comment {
 	proto := &pb.Comment{
@@ -43,6 +49,12 @@ type PostDTO struct {
 	Comments []CommentDTO
 	Tags     []model.PostTags
 }
+
+// since PostDTO defines its embedded post as SubredditPosts model,
+// trying to use jet QRM won't work for UserPosts model.
+// the solution is to use table alias for UserPosts table.
+// anywhere you need to map a UserPost to a PostDto, you should use this alias
+var AliasedUserPosts = table.UserPosts.AS("SubredditPosts")
 
 func (post_dto *PostDTO) mapToProto() *pb.Post {
 	proto := &pb.Post{

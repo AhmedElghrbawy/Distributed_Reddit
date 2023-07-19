@@ -60,7 +60,7 @@ var reply = await postClient.UpVoteAsync(postInfo);
 
 // var reply = await twopcClient.RollbackAsync(twopcInfo);
 
-System.Console.WriteLine(reply.NumberOfVotes);
+System.Console.WriteLine(reply);
 
 
 // await Task.Delay(1000);

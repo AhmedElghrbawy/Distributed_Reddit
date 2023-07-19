@@ -33,6 +33,8 @@ message User {
     repeated Post posts = 7;
     repeated string following_handles = 8;
     repeated string followed_by_handles = 9; 
+    repeated string joined_subreddit_handles = 10;
+    repeated string admined_subreddit_handles = 11;
 }
 
 message Post {

@@ -16,6 +16,7 @@ using var channel = GrpcChannel.ForAddress("http://localhost:50052");
 
 var postClient = new PostGRPC.PostGRPCClient(channel);
 var twopcClient = new TwoPhaseCommitGRPC.TwoPhaseCommitGRPCClient(channel);
+var userClient = new UserGRPC.UserGRPCClient(channel);
 
 // var subInfo = new SubredditInfo{
 //     Subreddit = new Subreddit{
@@ -32,31 +33,42 @@ var twopcClient = new TwoPhaseCommitGRPC.TwoPhaseCommitGRPCClient(channel);
 
 // subInfo.Subreddit.AdminsHandles.AddRange(new [] { "Hero", "Sayed", "paka" });
 
-var postInfo = new PostInfo{
-    Post = new Post {
-        Id = "9c8c468c-f180-46f3-ad63-af5832e17d41",
-        Title = "asdfpa",
-        OwnerHandle = "Ahmed",
-        SubredditHandle = "English",
-        IsPinned = false,
-    },
-    MessageInfo = new MessageInfo {
-        Id = "yeeet"
-    },
-    SubredditShard = 0,
-    UserShard = 0,
-    TwopcInfo = new TwoPhaseCommitInfo {
-        TransactionId = "bb",
-    }
-};
+// var postInfo = new PostInfo{
+//     Post = new Post {
+//         Id = "9c8c468c-f180-46f3-ad63-af5832e17d41",
+//         Title = "asdfpa",
+//         OwnerHandle = "Ahmed",
+//         SubredditHandle = "English",
+//         IsPinned = false,
+//     },
+//     MessageInfo = new MessageInfo {
+//         Id = "yeeet"
+//     },
+//     SubredditShard = 0,
+//     UserShard = 0,
+//     TwopcInfo = new TwoPhaseCommitInfo {
+//         TransactionId = "bb",
+//     }
+// };
 
 var twopcInfo = new TwoPhaseCommitInfo {
         TransactionId = "bb",
 };
 
+var userInfo = new UserInfo {
+    User = new User() {
+        Handle = "Ahmed",
+    },
+    MessageInfo = new MessageInfo {
+        Id = "yeeet"
+    },
+};
+
+
+
 // System.Console.WriteLine(subInfo);
 
-var reply = await postClient.UpVoteAsync(postInfo);
+var reply = await userClient.GetUserAsync(userInfo);
 
 // var reply = await twopcClient.RollbackAsync(twopcInfo);
 

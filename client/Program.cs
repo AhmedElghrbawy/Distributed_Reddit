@@ -12,7 +12,7 @@ var handler = new HttpClientHandler
     ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
 };
 
-using var channel = GrpcChannel.ForAddress("http://localhost:50050");
+using var channel = GrpcChannel.ForAddress("http://localhost:50052");
 
 var postClient = new PostGRPC.PostGRPCClient(channel);
 var twopcClient = new TwoPhaseCommitGRPC.TwoPhaseCommitGRPCClient(channel);
@@ -34,7 +34,7 @@ var twopcClient = new TwoPhaseCommitGRPC.TwoPhaseCommitGRPCClient(channel);
 
 var postInfo = new PostInfo{
     Post = new Post {
-        Id = "9c8c468c-f180-42f3-ad63-af5832e17d41",
+        Id = "9c8c468c-f180-46f3-ad63-af5832e17d41",
         Title = "asdfpa",
         OwnerHandle = "Ahmed",
         SubredditHandle = "English",
@@ -44,7 +44,7 @@ var postInfo = new PostInfo{
         Id = "yeeet"
     },
     SubredditShard = 0,
-    UserShard = 1,
+    UserShard = 0,
     TwopcInfo = new TwoPhaseCommitInfo {
         TransactionId = "bb",
     }
@@ -56,11 +56,11 @@ var twopcInfo = new TwoPhaseCommitInfo {
 
 // System.Console.WriteLine(subInfo);
 
-var reply = await postClient.PinUnpinAsync(postInfo);
+var reply = await postClient.UpVoteAsync(postInfo);
 
 // var reply = await twopcClient.RollbackAsync(twopcInfo);
 
-System.Console.WriteLine(reply.IsPinned);
+System.Console.WriteLine(reply.NumberOfVotes);
 
 
 // await Task.Delay(1000);

@@ -155,6 +155,40 @@ func (rdb *rdbServer) applyCommands() {
 	}
 }
 
+// submits the given operation to raft.
+// returns (true, replyInfo) if submited (this raft instance is the leader), else false, _
+func (rdb *rdbServer) submitOperationToRaft(op Op) (bool, *replyInfo) {
+	replyInfo := replyInfo{
+		id:     op.Id,
+		result: nil,
+		err:    &CommandNotExecutedError{},
+		ch:     make(chan struct{}),
+	}
+
+	rdb.mu.Lock()
+	rdb.replyMap[replyInfo.id] = &replyInfo
+	rdb.mu.Unlock()
+
+	var encodedOp bytes.Buffer
+	enc := gob.NewEncoder(&encodedOp)
+
+	err := enc.Encode(op)
+	if err != nil {
+		log.Fatal("encode error:", err)
+	}
+
+	_, _, isLeader := rdb.rf.Start(encodedOp.Bytes())
+
+	if !isLeader {
+		rdb.mu.Lock()
+		delete(rdb.replyMap, replyInfo.id)
+		rdb.mu.Unlock()
+		return false, nil
+	}
+
+	return true, &replyInfo
+}
+
 func parseCommandLineArgs(rdb *rdbServer) {
 
 	args := os.Args[1:]

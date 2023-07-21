@@ -226,3 +226,91 @@ func (ex *FollowUnfollowUserExecuter) Execute(rdb *rdbServer) (interface{}, erro
 	log.Printf("follow/unfollow command completed\n")
 	return true, nil
 }
+
+
+
+// returns (bool, error): true if operation executed successfully or error
+type JoinLeaveSubredditUserExecuter struct {
+	UserSubredditMembership *pb.UserSubredditMembership
+	Join              bool
+}
+
+func (ex *JoinLeaveSubredditUserExecuter) Execute(rdb *rdbServer) (interface{}, error) {
+	db, err := sql.Open("postgres", rdb.dbConnectionStr)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), DurationTO)
+	defer cancel()
+
+	subredditUserModel := model.SubredditUsers{
+		UserHandle: ex.UserSubredditMembership.UserHandle,
+		SubredditHandle: ex.UserSubredditMembership.SubredditHandle,
+		IsAdmin: false,
+	}
+	insertStmt := SubredditUsers.INSERT(SubredditUsers.AllColumns).
+		MODEL(subredditUserModel).
+		ON_CONFLICT(SubredditUsers.UserHandle, SubredditUsers.SubredditHandle).DO_NOTHING()
+	deleteStmt := SubredditUsers.DELETE().
+		WHERE(SubredditUsers.UserHandle.EQ(String(ex.UserSubredditMembership.UserHandle)).
+			AND(SubredditUsers.SubredditHandle.EQ(String(ex.UserSubredditMembership.SubredditHandle))))
+
+	isPreparedTx := ex.UserSubredditMembership.UserShard != ex.UserSubredditMembership.SubredditShard
+
+	if isPreparedTx {
+		log.Printf("Preparing to execute join/leave {User: %s, Subreddit: %s} as part of prepared tx\n",
+			ex.UserSubredditMembership.UserHandle, ex.UserSubredditMembership.SubredditHandle)
+
+		tx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			return false, errors.New("couldn't start transaction")
+		}
+		defer tx.Rollback()
+
+		if ex.Join {
+			_, err = insertStmt.ExecContext(ctx, tx)
+
+		} else {
+			_, err = deleteStmt.ExecContext(ctx, tx)
+		}
+
+		if err != nil {
+			log.Printf("failed to join/leave {User: %s, Subreddit: %s}. rolling back tx\n", ex.UserSubredditMembership.UserHandle, ex.UserSubredditMembership.SubredditHandle)
+			return false, err
+		}
+
+		preparedTxId := fmt.Sprintf("%s-S%d_R%d", ex.UserSubredditMembership.TwopcInfo.TransactionId, rdb.shardNum, rdb.replicaNum)
+		preparedTxRaw := fmt.Sprintf("PREPARE TRANSACTION '%s'", preparedTxId)
+
+		preparedStmt := RawStatement(preparedTxRaw)
+
+		_, err = preparedStmt.ExecContext(ctx, tx)
+
+		if err != nil {
+			log.Printf("failed to prepare join/leave {User: %s, Subreddit: %s} tx.\n", ex.UserSubredditMembership.UserHandle, ex.UserSubredditMembership.SubredditHandle)
+			return false, err
+		}
+
+		tx.Commit()
+		log.Printf("successfully prepared tx for join/leave {User: %s, Subreddit: %s} tx\n", ex.UserSubredditMembership.UserHandle, ex.UserSubredditMembership.SubredditHandle)
+	} else {
+		log.Printf("Preparing to execute join/leave {User: %s, Subreddit: %s} as part of non-prepared\n",
+		ex.UserSubredditMembership.UserHandle, ex.UserSubredditMembership.SubredditHandle)
+
+		if ex.Join {
+			_, err = insertStmt.Exec(db)
+
+		} else {
+			_, err = deleteStmt.Exec(db)
+		}
+		if err != nil {
+			log.Printf("failed to join/leave {User: %s, Subreddit: %s}\n", ex.UserSubredditMembership.UserHandle, ex.UserSubredditMembership.SubredditHandle)
+			return false, err
+		}
+	}
+
+	log.Printf("join/leave subreddit command completed\n")
+	return true, nil
+}

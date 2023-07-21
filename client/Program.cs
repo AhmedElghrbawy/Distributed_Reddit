@@ -12,7 +12,7 @@ var handler = new HttpClientHandler
     ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
 };
 
-using var channel = GrpcChannel.ForAddress("http://localhost:50051");
+using var channel = GrpcChannel.ForAddress("http://localhost:50050");
 
 var postClient = new PostGRPC.PostGRPCClient(channel);
 var twopcClient = new TwoPhaseCommitGRPC.TwoPhaseCommitGRPCClient(channel);
@@ -81,13 +81,26 @@ var followage = new UserFollowage {
     }
 };
 
+var membership = new UserSubredditMembership {
+    UserHandle = "kappa",
+    SubredditHandle = "Life",
+    UserShard = 0,
+    SubredditShard = 0,
+    MessageInfo = new MessageInfo {
+        Id = "yeeet"
+    },
+    TwopcInfo = new TwoPhaseCommitInfo {
+        TransactionId = "bb",
+    }
+};
+
 
 
 // System.Console.WriteLine(subInfo);
 
-// var reply = await userClient.FollowAsync(followage);
+var reply = await userClient.LeaveSubredditAsync(membership);
 
-var reply = await twopcClient.CommitAsync(twopcInfo);
+// var reply = await twopcClient.CommitAsync(twopcInfo);
 
 System.Console.WriteLine(reply);
 

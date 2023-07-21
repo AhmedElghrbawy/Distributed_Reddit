@@ -156,9 +156,49 @@ func (rdb *rdbServer) Unfollow(ctx context.Context, user_followage_info *pb.User
 }
 
 func (rdb *rdbServer) JoinSubreddit(ctx context.Context, membership_info *pb.UserSubredditMembership) (*emptypb.Empty, error) {
-	return nil, nil
+	op := Op{
+		Executer: &JoinLeaveSubredditUserExecuter{UserSubredditMembership: membership_info, Join: true},
+		Id:       membership_info.MessageInfo.Id,
+	}
+
+	submited, replyInfo := rdb.submitOperationToRaft(op)
+
+	if !submited {
+		return nil, errors.New("not the leader")
+	}
+
+	select {
+	case <-replyInfo.ch:
+		if replyInfo.err == nil {
+			return &emptypb.Empty{}, nil
+		} else {
+			return nil, replyInfo.err
+		}
+	case <-time.After(time.Second): // ? magic number
+		return nil, errors.New("timed out")
+	}
 }
 
 func (rdb *rdbServer) LeaveSubreddit(ctx context.Context, membership_info *pb.UserSubredditMembership) (*emptypb.Empty, error) {
-	return nil, nil
+	op := Op{
+		Executer: &JoinLeaveSubredditUserExecuter{UserSubredditMembership: membership_info, Join: false},
+		Id:       membership_info.MessageInfo.Id,
+	}
+
+	submited, replyInfo := rdb.submitOperationToRaft(op)
+
+	if !submited {
+		return nil, errors.New("not the leader")
+	}
+
+	select {
+	case <-replyInfo.ch:
+		if replyInfo.err == nil {
+			return &emptypb.Empty{}, nil
+		} else {
+			return nil, replyInfo.err
+		}
+	case <-time.After(time.Second): // ? magic number
+		return nil, errors.New("timed out")
+	}
 }

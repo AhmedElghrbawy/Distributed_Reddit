@@ -8,6 +8,7 @@ import (
 	"log"
 
 	"github.com/ahmedelghrbawy/replicated_db/pkg/jet_db/public/model"
+	"github.com/ahmedelghrbawy/replicated_db/pkg/jet_db/public/table"
 	. "github.com/ahmedelghrbawy/replicated_db/pkg/jet_db/public/table"
 	pb "github.com/ahmedelghrbawy/replicated_db/pkg/rdb_grpc"
 	. "github.com/go-jet/jet/v2/postgres"
@@ -38,7 +39,6 @@ func (ex *AddCommentExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 		parsed := uuid.MustParse(ex.In_comment_info.Comment.ParentCommentId)
 		parentCommentId = &parsed
 	}
-
 
 	subredditCommentModel := model.SubredditComments{
 		ID:              uuid.MustParse(ex.In_comment_info.Comment.Id),
@@ -126,4 +126,97 @@ func (ex *AddCommentExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 	}
 
 	return true, nil
+}
+
+type ChangeVoteValueForCommentExecuter struct {
+	In_comment_info *pb.CommentInfo
+	ValueToAdd      int
+}
+
+// returns (int, error): the new number of votes for the comment or error
+func (ex *ChangeVoteValueForCommentExecuter) Execute(rdb *rdbServer) (interface{}, error) {
+	db, err := sql.Open("postgres", rdb.dbConnectionStr)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	log.Printf("Preparing to change vote value for comment {Id: %s}\n", ex.In_comment_info.Comment.Id)
+
+	isUserComment := ex.In_comment_info.UserShard == int32(rdb.shardNum)
+	isSubredditComment := ex.In_comment_info.SubredditShard == int32(rdb.shardNum)
+
+	ustmt := SELECT(
+		AliasedUserComments.NumberOfVotes,
+	).FROM(AliasedUserComments).WHERE(
+		CAST(AliasedUserComments.ID).AS_TEXT().EQ(String(ex.In_comment_info.Comment.Id)),
+	)
+
+	sstmt := SELECT(
+		SubredditComments.NumberOfVotes,
+	).FROM(SubredditComments).WHERE(
+		CAST(SubredditComments.ID).AS_TEXT().EQ(String(ex.In_comment_info.Comment.Id)),
+	)
+
+	var curNumVotes int32
+	curComment := CommentDTO{}
+	if isUserComment {
+		err = ustmt.Query(db, &curComment)
+		if err != nil {
+			log.Printf("change vote value for comment {Id: %s} command failed %v\n", ex.In_comment_info.Comment.Id, err)
+			return 0, err
+		}
+		curNumVotes = curComment.NumberOfVotes
+	} else if isSubredditComment {
+		err = sstmt.Query(db, &curComment)
+		if err != nil {
+			log.Printf("change vote value for comment {Id: %s} command failed %v\n", ex.In_comment_info.Comment.Id, err)
+			return 0, err
+		}
+		curNumVotes = curComment.NumberOfVotes
+	}
+
+	subComment := model.SubredditComments{
+		NumberOfVotes: curNumVotes + int32(ex.ValueToAdd),
+	}
+
+	subCommentStmt := SubredditComments.
+		UPDATE(SubredditComments.NumberOfVotes).
+		MODEL(subComment).
+		WHERE(CAST(table.SubredditComments.ID).AS_TEXT().EQ(String(ex.In_comment_info.Comment.Id))).
+		RETURNING(SubredditComments.NumberOfVotes)
+
+	userComment := model.UserComments{
+		NumberOfVotes: curNumVotes + int32(ex.ValueToAdd),
+	}
+
+	userCommentStmt := AliasedUserComments.
+		UPDATE(AliasedUserComments.NumberOfVotes).
+		MODEL(userComment).
+		WHERE(CAST(AliasedUserComments.ID).AS_TEXT().EQ(String(ex.In_comment_info.Comment.Id))).
+		RETURNING(AliasedUserComments.NumberOfVotes)
+
+	result := CommentDTO{}
+
+	if isUserComment {
+		err = userCommentStmt.Query(db, &result)
+
+		if err != nil {
+			log.Printf("change vote value for comment {Id: %s} command failed %v\n", ex.In_comment_info.Comment.Id, err)
+			return 0, err
+		}
+	}
+
+	if isSubredditComment {
+		err = subCommentStmt.Query(db, &result)
+
+		if err != nil {
+			log.Printf("change vote value for {Id: %s} command failed %v\n", ex.In_comment_info.Comment.Id, err)
+			return 0, err
+		}
+	}
+
+	log.Printf("change vote value for command completed\n")
+
+	return result.NumberOfVotes, nil
 }

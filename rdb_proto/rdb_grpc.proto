@@ -150,10 +150,16 @@ message UserFollowage {
     string from_handle = 1;
     string to_handle = 2;
     MessageInfo message_info = 3;
+    int32 from_shard = 4;
+    int32 to_shard = 5;
+    TwoPhaseCommitInfo twopc_info = 6;
 }
 
 message UserSubredditMembership {
     string user_handle = 1;
     string subreddit_handle = 2;
     MessageInfo message_info = 3;
+    int32 user_shard = 4;
+    int32 subreddit_shard = 5;
+    TwoPhaseCommitInfo twopc_info = 6;
 }

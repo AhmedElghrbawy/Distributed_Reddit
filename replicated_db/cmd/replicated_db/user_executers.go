@@ -1,7 +1,10 @@
 package main
 
 import (
+	context "context"
 	"database/sql"
+	"errors"
+	"fmt"
 	"log"
 
 	"github.com/ahmedelghrbawy/replicated_db/pkg/jet_db/public/model"
@@ -137,4 +140,89 @@ func (ex *ChangeKarmaValueForUserExecuter) Execute(rdb *rdbServer) (interface{},
 
 	log.Printf("change karma value for user command completed\n")
 	return result.Karma, nil
+}
+
+// returns (bool, error): true if operation executed successfully or error
+type FollowUnfollowUserExecuter struct {
+	User_followage_info *pb.UserFollowage
+	Follow              bool
+}
+
+func (ex *FollowUnfollowUserExecuter) Execute(rdb *rdbServer) (interface{}, error) {
+	db, err := sql.Open("postgres", rdb.dbConnectionStr)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), DurationTO)
+	defer cancel()
+
+	folloawgeModel := model.Followage{
+		FollowerHandle: ex.User_followage_info.FromHandle,
+		FollowedHandle: ex.User_followage_info.ToHandle,
+	}
+	insertStmt := Followage.INSERT(Followage.FollowedHandle, Followage.FollowerHandle).
+		MODEL(folloawgeModel).
+		ON_CONFLICT(Followage.FollowedHandle, Followage.FollowerHandle).DO_NOTHING()
+	deleteStmt := Followage.DELETE().
+		WHERE(Followage.FollowerHandle.EQ(String(ex.User_followage_info.FromHandle)).
+			AND(Followage.FollowedHandle.EQ(String(ex.User_followage_info.ToHandle))))
+
+	isPreparedTx := ex.User_followage_info.FromShard != ex.User_followage_info.ToShard
+
+	if isPreparedTx {
+		log.Printf("Preparing to execute follow/unfollow {From: %s, to: %s} as part of prepared tx\n",
+			ex.User_followage_info.FromHandle, ex.User_followage_info.ToHandle)
+
+		tx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			return false, errors.New("couldn't start transaction")
+		}
+		defer tx.Rollback()
+
+		if ex.Follow {
+			_, err = insertStmt.ExecContext(ctx, tx)
+
+		} else {
+			_, err = deleteStmt.ExecContext(ctx, tx)
+		}
+
+		if err != nil {
+			log.Printf("failed to follow/unfollow {From: %s, to: %s}. rolling back tx\n", ex.User_followage_info.FromHandle, ex.User_followage_info.ToHandle)
+			return false, err
+		}
+
+		preparedTxId := fmt.Sprintf("%s-S%d_R%d", ex.User_followage_info.TwopcInfo.TransactionId, rdb.shardNum, rdb.replicaNum)
+		preparedTxRaw := fmt.Sprintf("PREPARE TRANSACTION '%s'", preparedTxId)
+
+		preparedStmt := RawStatement(preparedTxRaw)
+
+		_, err = preparedStmt.ExecContext(ctx, tx)
+
+		if err != nil {
+			log.Printf("failed to prepare follow/unfollow {From: %s, to: %s} tx.\n", ex.User_followage_info.FromHandle, ex.User_followage_info.ToHandle)
+			return false, err
+		}
+
+		tx.Commit()
+		log.Printf("successfully prepared tx for follow/unfollow {From: %s, to: %s} tx\n", ex.User_followage_info.FromHandle, ex.User_followage_info.ToHandle)
+	} else {
+		log.Printf("Preparing to execute follow/unfollow {From: %s, to: %s} as part of non-prepared\n",
+			ex.User_followage_info.FromHandle, ex.User_followage_info.ToHandle)
+
+		if ex.Follow {
+			_, err = insertStmt.Exec(db)
+
+		} else {
+			_, err = deleteStmt.Exec(db)
+		}
+		if err != nil {
+			log.Printf("failed to follow/unfollow {From: %s, to: %s}\n", ex.User_followage_info.FromHandle, ex.User_followage_info.ToHandle)
+			return false, err
+		}
+	}
+
+	log.Printf("follow/unfollow command completed\n")
+	return true, nil
 }

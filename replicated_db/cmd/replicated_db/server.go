@@ -103,6 +103,7 @@ func main() {
 	gob.Register(&GetUserExecuter{})
 	gob.Register(&CreateUserExecuter{})
 	gob.Register(&ChangeKarmaValueForUserExecuter{})
+	gob.Register(&FollowUnfollowUserExecuter{})
 
 	gob.Register(&CommitExecuter{})
 	gob.Register(&RollbackExecuter{})

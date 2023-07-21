@@ -12,7 +12,7 @@ var handler = new HttpClientHandler
     ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
 };
 
-using var channel = GrpcChannel.ForAddress("http://localhost:50052");
+using var channel = GrpcChannel.ForAddress("http://localhost:50051");
 
 var postClient = new PostGRPC.PostGRPCClient(channel);
 var twopcClient = new TwoPhaseCommitGRPC.TwoPhaseCommitGRPCClient(channel);
@@ -68,13 +68,26 @@ var userInfo = new UserInfo {
     },
 };
 
+var followage = new UserFollowage {
+    FromHandle = "kappa",
+    ToHandle = "Ahmed",
+    FromShard = 0,
+    ToShard = 1,
+    MessageInfo = new MessageInfo {
+        Id = "yeeet"
+    },
+    TwopcInfo = new TwoPhaseCommitInfo {
+        TransactionId = "bb",
+    }
+};
+
 
 
 // System.Console.WriteLine(subInfo);
 
-var reply = await userClient.DecreaseKarmaAsync(userInfo);
+// var reply = await userClient.FollowAsync(followage);
 
-// var reply = await twopcClient.RollbackAsync(twopcInfo);
+var reply = await twopcClient.CommitAsync(twopcInfo);
 
 System.Console.WriteLine(reply);
 

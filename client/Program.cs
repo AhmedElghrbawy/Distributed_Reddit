@@ -12,11 +12,12 @@ var handler = new HttpClientHandler
     ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
 };
 
-using var channel = GrpcChannel.ForAddress("http://localhost:50050");
+using var channel = GrpcChannel.ForAddress("http://localhost:50052");
 
 var postClient = new PostGRPC.PostGRPCClient(channel);
 var twopcClient = new TwoPhaseCommitGRPC.TwoPhaseCommitGRPCClient(channel);
 var userClient = new UserGRPC.UserGRPCClient(channel);
+var commentClient = new CommentGRPC.CommentGRPCClient(channel);
 
 // var subInfo = new SubredditInfo{
 //     Subreddit = new Subreddit{
@@ -95,12 +96,31 @@ var membership = new UserSubredditMembership {
 };
 
 
+var commentInfo = new CommentInfo {
+    Comment = new Comment {
+        Content = "bufflo",
+        Id = "9c8c468c-f110-46f3-ad63-af5832e17d43",
+        Image = ByteString.CopyFrom("e#>&*m16", Encoding.Unicode),
+        NumberOfVotes = 0,
+        OwnerHandle = "Ahmed",
+        PostId = "9c8c468c-f180-46f3-ad63-af5832e17d41",
+        ParentCommentId = "9c8c468c-f180-46f3-ad63-af5832e17d41",
+    },
+        MessageInfo = new MessageInfo {
+        Id = "yeeet"
+    },
+    SubredditShard = 1,
+    UserShard = 0,
+    TwopcInfo = new TwoPhaseCommitInfo {
+        TransactionId = "bb",
+    }
+};
 
 // System.Console.WriteLine(subInfo);
 
-var reply = await userClient.LeaveSubredditAsync(membership);
+// var reply = await commentClient.AddCommentAsync(commentInfo);
 
-// var reply = await twopcClient.CommitAsync(twopcInfo);
+var reply = await twopcClient.RollbackAsync(twopcInfo);
 
 System.Console.WriteLine(reply);
 

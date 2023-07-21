@@ -57,7 +57,7 @@ message Comment {
     bytes image = 3;
     int32 number_of_votes = 4;
     string owner_handle = 5;
-    string parent_comment_id = 6;
+    string parent_comment_id = 6; // "" for comment with no parent
     string post_id = 7; 
 }
  
@@ -93,8 +93,8 @@ service UserGRPC {
 
 service CommentGRPC {
     rpc AddComment(CommentInfo) returns (Comment);
-    rpc UpVote(CommentInfo) returns (Comment);
-    rpc DownVote(CommentInfo) returns (Comment);
+    rpc UpVoteComment(CommentInfo) returns (Comment);
+    rpc DownVoteComment(CommentInfo) returns (Comment);
 }
 
 service TwoPhaseCommitGRPC {

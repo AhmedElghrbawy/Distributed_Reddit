@@ -146,53 +146,16 @@ func (ex *ChangeVoteValueForCommentExecuter) Execute(rdb *rdbServer) (interface{
 	isUserComment := ex.In_comment_info.UserShard == int32(rdb.shardNum)
 	isSubredditComment := ex.In_comment_info.SubredditShard == int32(rdb.shardNum)
 
-	ustmt := SELECT(
-		AliasedUserComments.NumberOfVotes,
-	).FROM(AliasedUserComments).WHERE(
-		CAST(AliasedUserComments.ID).AS_TEXT().EQ(String(ex.In_comment_info.Comment.Id)),
-	)
-
-	sstmt := SELECT(
-		SubredditComments.NumberOfVotes,
-	).FROM(SubredditComments).WHERE(
-		CAST(SubredditComments.ID).AS_TEXT().EQ(String(ex.In_comment_info.Comment.Id)),
-	)
-
-	var curNumVotes int32
-	curComment := CommentDTO{}
-	if isUserComment {
-		err = ustmt.Query(db, &curComment)
-		if err != nil {
-			log.Printf("change vote value for comment {Id: %s} command failed %v\n", ex.In_comment_info.Comment.Id, err)
-			return 0, err
-		}
-		curNumVotes = curComment.NumberOfVotes
-	} else if isSubredditComment {
-		err = sstmt.Query(db, &curComment)
-		if err != nil {
-			log.Printf("change vote value for comment {Id: %s} command failed %v\n", ex.In_comment_info.Comment.Id, err)
-			return 0, err
-		}
-		curNumVotes = curComment.NumberOfVotes
-	}
-
-	subComment := model.SubredditComments{
-		NumberOfVotes: curNumVotes + int32(ex.ValueToAdd),
-	}
 
 	subCommentStmt := SubredditComments.
 		UPDATE(SubredditComments.NumberOfVotes).
-		MODEL(subComment).
+		SET(Int(int64(ex.ValueToAdd)).ADD(SubredditComments.NumberOfVotes)).
 		WHERE(CAST(table.SubredditComments.ID).AS_TEXT().EQ(String(ex.In_comment_info.Comment.Id))).
 		RETURNING(SubredditComments.NumberOfVotes)
 
-	userComment := model.UserComments{
-		NumberOfVotes: curNumVotes + int32(ex.ValueToAdd),
-	}
-
 	userCommentStmt := AliasedUserComments.
 		UPDATE(AliasedUserComments.NumberOfVotes).
-		MODEL(userComment).
+		SET(Int(int64(ex.ValueToAdd)).ADD(AliasedUserComments.NumberOfVotes)).
 		WHERE(CAST(AliasedUserComments.ID).AS_TEXT().EQ(String(ex.In_comment_info.Comment.Id))).
 		RETURNING(AliasedUserComments.NumberOfVotes)
 

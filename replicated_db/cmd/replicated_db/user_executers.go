@@ -108,24 +108,10 @@ func (ex *ChangeKarmaValueForUserExecuter) Execute(rdb *rdbServer) (interface{},
 	log.Printf("Preparing to execute change karma for User {Id: %s}\n",
 		ex.In_user_info.User.Handle)
 
-	curKarmaStmt := SELECT(Users.Karma).FROM(Users).WHERE(Users.Handle.EQ(String(ex.In_user_info.User.Handle)))
-
-	curUser := UserDTO{}
-	err = curKarmaStmt.Query(db, &curUser)
-
-	if err != nil {
-		log.Printf("change karma value for User {handle: %s} command failed %v\n", ex.In_user_info.User.Handle, err)
-		return 0, err
-	}
-	curKarma := curUser.Karma
-
-	u := model.Users{
-		Karma: curKarma + int32(ex.ValueToAdd),
-	}
 
 	updateKarmaStmt := Users.
 		UPDATE(Users.Karma).
-		MODEL(u).
+		SET(Int(int64(ex.ValueToAdd)).ADD(Users.Karma)).
 		WHERE(Users.Handle.EQ(String(ex.In_user_info.User.Handle))).
 		RETURNING(Users.Karma)
 

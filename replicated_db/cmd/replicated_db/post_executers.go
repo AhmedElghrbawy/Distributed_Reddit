@@ -301,54 +301,15 @@ func (ex *ChangeVoteValueForPostExecuter) Execute(rdb *rdbServer) (interface{}, 
 	isSubredditPost := ex.In_post_info.SubredditShard == int32(rdb.shardNum)
 
 
-	ustmt := SELECT(
-		AliasedUserPosts.NumberOfVotes,
-	).FROM(AliasedUserPosts).WHERE(
-		CAST(AliasedUserPosts.ID).AS_TEXT().EQ(String(ex.In_post_info.Post.Id)),
-	)
-
-	sstmt := SELECT(
-		SubredditPosts.NumberOfVotes,
-	).FROM(SubredditPosts).WHERE(
-		CAST(SubredditPosts.ID).AS_TEXT().EQ(String(ex.In_post_info.Post.Id)),
-	)
-
-	var curNumVotes int32
-	curPost := PostDTO{}
-	if isUserPost {
-		err = ustmt.Query(db, &curPost)
-		if err != nil {
-			log.Printf("change vote value for post {Id: %s} command failed %v\n", ex.In_post_info.Post.Id, err)
-			return 0, err
-		}
-		curNumVotes = curPost.NumberOfVotes
-	} else if isSubredditPost {
-		err = sstmt.Query(db, &curPost)
-		if err != nil {
-			log.Printf("change vote value for post {Id: %s} command failed %v\n", ex.In_post_info.Post.Id, err)
-			return 0, err
-		}
-		curNumVotes = curPost.NumberOfVotes
-	}
-
-
-	subPost := model.SubredditPosts{
-		NumberOfVotes: curNumVotes + int32(ex.ValueToAdd),
-	}
-
 	subPostStmt := SubredditPosts.
 		UPDATE(SubredditPosts.NumberOfVotes).
-		MODEL(subPost).
+		SET(Int(int64(ex.ValueToAdd)).ADD(SubredditPosts.NumberOfVotes)).
 		WHERE(CAST(table.SubredditPosts.ID).AS_TEXT().EQ(String(ex.In_post_info.Post.Id))).
 		RETURNING(SubredditPosts.NumberOfVotes)
 
-	userPost := model.UserPosts{
-		NumberOfVotes: curNumVotes + int32(ex.ValueToAdd),
-	}
-
 	userPostStmt := AliasedUserPosts.
 		UPDATE(AliasedUserPosts.NumberOfVotes).
-		MODEL(userPost).
+		SET(Int(int64(ex.ValueToAdd)).ADD(AliasedUserPosts.NumberOfVotes)).
 		WHERE(CAST(AliasedUserPosts.ID).AS_TEXT().EQ(String(ex.In_post_info.Post.Id))).
 		RETURNING(AliasedUserPosts.NumberOfVotes)
 

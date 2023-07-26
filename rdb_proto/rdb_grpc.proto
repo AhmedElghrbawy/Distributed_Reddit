@@ -81,8 +81,7 @@ service PostGRPC {
 service UserGRPC {
     rpc GetUser(UserInfo) returns (User);
     rpc CreateUser(UserInfo) returns (User);
-    rpc IncreaseKarma(UserInfo) returns (User);
-    rpc DecreaseKarma(UserInfo) returns (User);
+    rpc UpdateUser(UserInfo) returns (User);
     rpc Follow(UserFollowage) returns (google.protobuf.Empty);
     rpc Unfollow(UserFollowage) returns (google.protobuf.Empty);
     rpc JoinSubreddit(UserSubredditMembership) returns (google.protobuf.Empty);
@@ -135,6 +134,7 @@ message SubredditInfo {
 message UserInfo {
     User user = 1;
     MessageInfo message_info = 2;
+    repeated UserUpdatedColumn updated_columns = 6;
 }
 
 message CommentInfo {
@@ -168,4 +168,10 @@ enum PostUpdatedColumn {
     CONTENT = 3;
     NUMBER_OF_VOTES = 6;
     IS_PINNED = 7;
+}
+
+enum UserUpdatedColumn {
+    DISPLAY_NAME = 0;
+    AVATAR = 1;
+    KARMA = 2;
 }

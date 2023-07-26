@@ -102,9 +102,9 @@ func main() {
 	// user
 	gob.Register(&GetUserExecuter{})
 	gob.Register(&CreateUserExecuter{})
-	gob.Register(&ChangeKarmaValueForUserExecuter{})
 	gob.Register(&FollowUnfollowUserExecuter{})
 	gob.Register(&JoinLeaveSubredditUserExecuter{})
+	gob.Register(&UpdateUserExecuter{})
 
 	//comment
 	gob.Register(&AddCommentExecuter{})

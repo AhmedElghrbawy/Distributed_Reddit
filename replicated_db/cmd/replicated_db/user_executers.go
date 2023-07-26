@@ -13,6 +13,12 @@ import (
 	. "github.com/go-jet/jet/v2/postgres"
 )
 
+var grpc_column_to_user_column = map[pb.UserUpdatedColumn]Column{
+	pb.UserUpdatedColumn_AVATAR:       Users.Avatar,
+	pb.UserUpdatedColumn_DISPLAY_NAME: Users.DisplayName,
+	pb.UserUpdatedColumn_KARMA:        Users.Karma,
+}
+
 // returns (*UserDto, error): the user requested or error
 type GetUserExecuter struct {
 	In_user_info *pb.UserInfo
@@ -90,42 +96,6 @@ func (ex *CreateUserExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 
 	log.Printf("create user command completed\n")
 	return true, nil
-}
-
-// returns (int, error): the new karma value for the user or error
-type ChangeKarmaValueForUserExecuter struct {
-	In_user_info *pb.UserInfo
-	ValueToAdd   int
-}
-
-func (ex *ChangeKarmaValueForUserExecuter) Execute(rdb *rdbServer) (interface{}, error) {
-	db, err := sql.Open("postgres", rdb.dbConnectionStr)
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-
-	log.Printf("Preparing to execute change karma for User {Id: %s}\n",
-		ex.In_user_info.User.Handle)
-
-
-	updateKarmaStmt := Users.
-		UPDATE(Users.Karma).
-		SET(Int(int64(ex.ValueToAdd)).ADD(Users.Karma)).
-		WHERE(Users.Handle.EQ(String(ex.In_user_info.User.Handle))).
-		RETURNING(Users.Karma)
-
-	result := UserDTO{}
-
-	err = updateKarmaStmt.Query(db, &result)
-
-	if err != nil {
-		log.Printf("change karma value for User {handle: %s} command failed %v\n", ex.In_user_info.User.Handle, err)
-		return 0, err
-	}
-
-	log.Printf("change karma value for user command completed\n")
-	return result.Karma, nil
 }
 
 // returns (bool, error): true if operation executed successfully or error
@@ -213,12 +183,10 @@ func (ex *FollowUnfollowUserExecuter) Execute(rdb *rdbServer) (interface{}, erro
 	return true, nil
 }
 
-
-
 // returns (bool, error): true if operation executed successfully or error
 type JoinLeaveSubredditUserExecuter struct {
 	UserSubredditMembership *pb.UserSubredditMembership
-	Join              bool
+	Join                    bool
 }
 
 func (ex *JoinLeaveSubredditUserExecuter) Execute(rdb *rdbServer) (interface{}, error) {
@@ -232,9 +200,9 @@ func (ex *JoinLeaveSubredditUserExecuter) Execute(rdb *rdbServer) (interface{}, 
 	defer cancel()
 
 	subredditUserModel := model.SubredditUsers{
-		UserHandle: ex.UserSubredditMembership.UserHandle,
+		UserHandle:      ex.UserSubredditMembership.UserHandle,
 		SubredditHandle: ex.UserSubredditMembership.SubredditHandle,
-		IsAdmin: false,
+		IsAdmin:         false,
 	}
 	insertStmt := SubredditUsers.INSERT(SubredditUsers.AllColumns).
 		MODEL(subredditUserModel).
@@ -283,7 +251,7 @@ func (ex *JoinLeaveSubredditUserExecuter) Execute(rdb *rdbServer) (interface{}, 
 		log.Printf("successfully prepared tx for join/leave {User: %s, Subreddit: %s} tx\n", ex.UserSubredditMembership.UserHandle, ex.UserSubredditMembership.SubredditHandle)
 	} else {
 		log.Printf("Preparing to execute join/leave {User: %s, Subreddit: %s} as part of non-prepared\n",
-		ex.UserSubredditMembership.UserHandle, ex.UserSubredditMembership.SubredditHandle)
+			ex.UserSubredditMembership.UserHandle, ex.UserSubredditMembership.SubredditHandle)
 
 		if ex.Join {
 			_, err = insertStmt.Exec(db)
@@ -299,4 +267,60 @@ func (ex *JoinLeaveSubredditUserExecuter) Execute(rdb *rdbServer) (interface{}, 
 
 	log.Printf("join/leave subreddit command completed\n")
 	return true, nil
+}
+
+// returns (*UserDTO, error): the user after updating or error
+type UpdateUserExecuter struct {
+	In_user_info         *pb.UserInfo
+	Updated_column_value map[pb.UserUpdatedColumn]interface{}
+}
+
+func (ex *UpdateUserExecuter) Execute(rdb *rdbServer) (interface{}, error) {
+	ex.Updated_column_value = map[pb.UserUpdatedColumn]interface{}{
+		pb.UserUpdatedColumn_AVATAR:       ex.In_user_info.User.Avatar,
+		pb.UserUpdatedColumn_DISPLAY_NAME: ex.In_user_info.User.DisplayName,
+		pb.UserUpdatedColumn_KARMA:        Int(int64(ex.In_user_info.User.Karma)),
+	}
+
+	user_columns_to_update := ColumnList{}
+	for _, c := range ex.In_user_info.UpdatedColumns {
+		user_columns_to_update = append(user_columns_to_update, grpc_column_to_user_column[c])
+	}
+
+	user_updated_values := make([]interface{}, 0)
+
+	for _, c := range ex.In_user_info.UpdatedColumns {
+		if c == pb.UserUpdatedColumn_KARMA {
+			value := ex.Updated_column_value[c].(IntegerExpression).ADD(Users.Karma)
+			user_updated_values = append(user_updated_values, value)
+		} else {
+			user_updated_values = append(user_updated_values, ex.Updated_column_value[c])
+		}
+	}
+
+	db, err := sql.Open("postgres", rdb.dbConnectionStr)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	log.Printf("Preparing to update user {handle: %s} columns: %v, values: %v\n", ex.In_user_info.User.Handle, user_columns_to_update, user_updated_values)
+
+	updateStmt := Users.
+		UPDATE(user_columns_to_update).
+		SET(user_updated_values[0], user_updated_values[1:]...).
+		WHERE(Users.Handle.EQ(String(ex.In_user_info.User.Handle))).
+		RETURNING(Users.AllColumns)
+
+	result := UserDTO{}
+
+	err = updateStmt.Query(db, &result)
+
+	if err != nil {
+		log.Printf("update User {handle: %s} command failed %v\n", ex.In_user_info.User.Handle, err)
+		return 0, err
+	}
+
+	log.Printf("update user command completed\n")
+	return &result, nil
 }

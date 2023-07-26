@@ -12,7 +12,7 @@ var handler = new HttpClientHandler
     ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
 };
 
-using var channel = GrpcChannel.ForAddress("http://localhost:50051");
+using var channel = GrpcChannel.ForAddress("http://localhost:50050");
 
 var postClient = new PostGRPC.PostGRPCClient(channel);
 var twopcClient = new TwoPhaseCommitGRPC.TwoPhaseCommitGRPCClient(channel);
@@ -54,7 +54,7 @@ var postInfo = new PostInfo{
     },
 };
 
-postInfo.UpdatedColumns.AddRange(new[] { PostUpdatedColumn.NumberOfVotes, PostUpdatedColumn.Title, PostUpdatedColumn.Content, PostUpdatedColumn.IsPinned});
+postInfo.UpdatedColumns.AddRange(new[] { PostUpdatedColumn.NumberOfVotes });
 
 var twopcInfo = new TwoPhaseCommitInfo {
         TransactionId = "bb",
@@ -62,16 +62,18 @@ var twopcInfo = new TwoPhaseCommitInfo {
 
 var userInfo = new UserInfo {
     User = new User() {
-        Handle = "kappa",
+        Handle = "Ahmed",
         Avatar = ByteString.CopyFrom("e#>&*m16", Encoding.Unicode),
-        DisplayName = "cy@",
+        DisplayName = "gherbo",
         CreatedAt = DateTimeOffset.UtcNow.ToTimestamp(),
-        Karma = 0,
+        Karma = 1,
     },
     MessageInfo = new MessageInfo {
         Id = "yeeet"
     },
 };
+
+userInfo.UpdatedColumns.AddRange(new[] { UserUpdatedColumn.Karma, UserUpdatedColumn.DisplayName });
 
 var followage = new UserFollowage {
     FromHandle = "kappa",
@@ -122,7 +124,7 @@ var commentInfo = new CommentInfo {
 
 // System.Console.WriteLine(subInfo);
 
-var reply = await postClient.UpdatePostAsync(postInfo);
+var reply = await userClient.UpdateUserAsync(userInfo);
 
 // var reply = await twopcClient.RollbackAsync(twopcInfo);
 

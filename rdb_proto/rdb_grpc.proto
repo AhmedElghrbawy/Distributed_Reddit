@@ -90,8 +90,6 @@ service UserGRPC {
 
 service CommentGRPC {
     rpc AddComment(CommentInfo) returns (Comment);
-    rpc UpVoteComment(CommentInfo) returns (Comment);
-    rpc DownVoteComment(CommentInfo) returns (Comment);
     rpc UpdateComment(CommentInfo) returns (Comment);
 }
 

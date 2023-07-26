@@ -108,7 +108,6 @@ func main() {
 
 	//comment
 	gob.Register(&AddCommentExecuter{})
-	gob.Register(&ChangeVoteValueForCommentExecuter{})
 	gob.Register(&UpdateCommentExecuter{})
 
 	gob.Register(&CommitExecuter{})

@@ -74,10 +74,8 @@ service SubredditGRPC {
 service PostGRPC {
     rpc GetPost(PostInfo) returns (Post);
     rpc CreatePost(PostInfo) returns (Post);
+    rpc UpdatePost(PostInfo) returns (Post);
     rpc GetPosts(MessageInfo) returns (PostList);
-    rpc PinUnpin(PostInfo) returns (Post);
-    rpc UpVote(PostInfo) returns (Post);
-    rpc DownVote(PostInfo) returns (Post);
 }
  
 service UserGRPC {
@@ -126,6 +124,7 @@ message PostInfo {
     int32 subreddit_shard = 3;
     TwoPhaseCommitInfo twopc_info = 4;
     MessageInfo message_info = 5;
+    repeated PostUpdatedColumn updated_columns = 6;
 }
 
 message SubredditInfo {
@@ -162,4 +161,11 @@ message UserSubredditMembership {
     int32 user_shard = 4;
     int32 subreddit_shard = 5;
     TwoPhaseCommitInfo twopc_info = 6;
+}
+
+enum PostUpdatedColumn {
+    TITLE = 0;
+    CONTENT = 3;
+    NUMBER_OF_VOTES = 6;
+    IS_PINNED = 7;
 }

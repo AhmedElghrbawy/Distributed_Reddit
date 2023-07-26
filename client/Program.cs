@@ -12,7 +12,7 @@ var handler = new HttpClientHandler
     ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
 };
 
-using var channel = GrpcChannel.ForAddress("http://localhost:50052");
+using var channel = GrpcChannel.ForAddress("http://localhost:50051");
 
 var postClient = new PostGRPC.PostGRPCClient(channel);
 var twopcClient = new TwoPhaseCommitGRPC.TwoPhaseCommitGRPCClient(channel);
@@ -34,23 +34,27 @@ var commentClient = new CommentGRPC.CommentGRPCClient(channel);
 
 // subInfo.Subreddit.AdminsHandles.AddRange(new [] { "Hero", "Sayed", "paka" });
 
-// var postInfo = new PostInfo{
-//     Post = new Post {
-//         Id = "9c8c468c-f180-46f3-ad63-af5832e17d41",
-//         Title = "asdfpa",
-//         OwnerHandle = "Ahmed",
-//         SubredditHandle = "English",
-//         IsPinned = false,
-//     },
-//     MessageInfo = new MessageInfo {
-//         Id = "yeeet"
-//     },
-//     SubredditShard = 0,
-//     UserShard = 0,
-//     TwopcInfo = new TwoPhaseCommitInfo {
-//         TransactionId = "bb",
-//     }
-// };
+var postInfo = new PostInfo{
+    Post = new Post {
+        Id = "9c8c468c-f180-46f3-ad63-af5832e17d41",
+        Title = "updated title",
+        Content = "updated content",
+        OwnerHandle = "Ahmed",
+        SubredditHandle = "English",
+        IsPinned = true,
+        NumberOfVotes = -1,
+    },
+    MessageInfo = new MessageInfo {
+        Id = "yeeet"
+    },
+    SubredditShard = 0,
+    UserShard = 0,
+    TwopcInfo = new TwoPhaseCommitInfo {
+        TransactionId = "bb",
+    },
+};
+
+postInfo.UpdatedColumns.AddRange(new[] { PostUpdatedColumn.NumberOfVotes, PostUpdatedColumn.Title, PostUpdatedColumn.Content, PostUpdatedColumn.IsPinned});
 
 var twopcInfo = new TwoPhaseCommitInfo {
         TransactionId = "bb",
@@ -118,7 +122,7 @@ var commentInfo = new CommentInfo {
 
 // System.Console.WriteLine(subInfo);
 
-var reply = await commentClient.DownVoteCommentAsync(commentInfo);
+var reply = await postClient.UpdatePostAsync(postInfo);
 
 // var reply = await twopcClient.RollbackAsync(twopcInfo);
 

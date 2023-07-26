@@ -15,6 +15,20 @@ import (
 	"github.com/google/uuid"
 )
 
+var grpc_column_to_subpost_column = map[pb.PostUpdatedColumn]Column{
+	pb.PostUpdatedColumn_TITLE:           SubredditPosts.Title,
+	pb.PostUpdatedColumn_CONTENT:         SubredditPosts.Content,
+	pb.PostUpdatedColumn_IS_PINNED:       SubredditPosts.IsPinned,
+	pb.PostUpdatedColumn_NUMBER_OF_VOTES: SubredditPosts.NumberOfVotes,
+}
+
+var grpc_column_to_userpost_column = map[pb.PostUpdatedColumn]Column{
+	pb.PostUpdatedColumn_TITLE:           AliasedUserPosts.Title,
+	pb.PostUpdatedColumn_CONTENT:         AliasedUserPosts.Content,
+	pb.PostUpdatedColumn_IS_PINNED:       AliasedUserPosts.IsPinned,
+	pb.PostUpdatedColumn_NUMBER_OF_VOTES: AliasedUserPosts.NumberOfVotes,
+}
+
 // returns (*PostDTO, error): the post requested or error
 type GetPostExecuter struct {
 	In_post_info *pb.PostInfo
@@ -244,74 +258,74 @@ func (ex *GetPostsExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 	return &result, nil
 }
 
-// returns (*PostDTO, error): the subreddit post after pinning/unpinning it or error
-type PinUnpinPostExecuter struct {
-	In_post_info *pb.PostInfo
+// returns (postDTO, error): the post after updating or error
+type UpdatePostExecuter struct {
+	In_post_info         *pb.PostInfo
+	Updated_column_value map[pb.PostUpdatedColumn]interface{}
 }
 
-func (ex *PinUnpinPostExecuter) Execute(rdb *rdbServer) (interface{}, error) {
+func (ex *UpdatePostExecuter) Execute(rdb *rdbServer) (interface{}, error) {
+	ex.Updated_column_value = map[pb.PostUpdatedColumn]interface{}{
+		pb.PostUpdatedColumn_TITLE:           ex.In_post_info.Post.Title,
+		pb.PostUpdatedColumn_CONTENT:         ex.In_post_info.Post.Content,
+		pb.PostUpdatedColumn_IS_PINNED:       ex.In_post_info.Post.IsPinned,
+		pb.PostUpdatedColumn_NUMBER_OF_VOTES: Int(int64(ex.In_post_info.Post.NumberOfVotes)),
+	}
+
+	subpost_columns_to_update := ColumnList{}
+	for _, c := range ex.In_post_info.UpdatedColumns {
+		subpost_columns_to_update = append(subpost_columns_to_update, grpc_column_to_subpost_column[c])
+	}
+
+	userpost_columns_to_update := ColumnList{}
+	for _, c := range ex.In_post_info.UpdatedColumns {
+		userpost_columns_to_update = append(userpost_columns_to_update, grpc_column_to_userpost_column[c])
+	}
+
+	subpost_updated_values := make([]interface{}, 0)
+
+	for _, c := range ex.In_post_info.UpdatedColumns {
+		if c == pb.PostUpdatedColumn_NUMBER_OF_VOTES {
+			value := ex.Updated_column_value[c].(IntegerExpression).ADD(SubredditPosts.NumberOfVotes)
+			subpost_updated_values = append(subpost_updated_values, value)
+		} else {
+			subpost_updated_values = append(subpost_updated_values, ex.Updated_column_value[c])
+		}
+	}
+
+	userpost_updated_values := make([]interface{}, 0)
+
+	for _, c := range ex.In_post_info.UpdatedColumns {
+		if c == pb.PostUpdatedColumn_NUMBER_OF_VOTES {
+			value := ex.Updated_column_value[c].(IntegerExpression).ADD(AliasedUserPosts.NumberOfVotes)
+			userpost_updated_values = append(userpost_updated_values, value)
+		} else {
+			userpost_updated_values = append(userpost_updated_values, ex.Updated_column_value[c])
+		}
+	}
+
 	db, err := sql.Open("postgres", rdb.dbConnectionStr)
 	if err != nil {
 		panic(err)
 	}
 	defer db.Close()
 
-	log.Printf("Preparing to execute pin/unpin for post {Id: %s}\n", ex.In_post_info.Post.Id)
-
-	m := model.SubredditPosts{
-		IsPinned: ex.In_post_info.Post.IsPinned,
-	}
-
-	stmt := SubredditPosts.
-		UPDATE(SubredditPosts.IsPinned).
-		MODEL(m).
-		WHERE(CAST(table.SubredditPosts.ID).AS_TEXT().EQ(String(ex.In_post_info.Post.Id))).
-		RETURNING(SubredditPosts.AllColumns)
-
-	result := PostDTO{}
-
-	err = stmt.Query(db, &result)
-
-	if err != nil {
-		log.Printf("pin/unpin post {Id: %s} command failed %v\n", ex.In_post_info.Post.Id, err)
-		return &result, err
-	}
-
-	log.Printf("pin/unpin command completed\n")
-
-	return &result, nil
-}
-
-// returns (int, error): the new number of votes for the post or error
-type ChangeVoteValueForPostExecuter struct {
-	In_post_info *pb.PostInfo
-	ValueToAdd   int
-}
-
-func (ex *ChangeVoteValueForPostExecuter) Execute(rdb *rdbServer) (interface{}, error) {
-	db, err := sql.Open("postgres", rdb.dbConnectionStr)
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-
-	log.Printf("Preparing to change vote value for post {Id: %s}\n", ex.In_post_info.Post.Id)
+	log.Printf("Preparing to update post {Id: %s} columns: %v, values: %v\n", ex.In_post_info.Post.Id, userpost_columns_to_update, userpost_updated_values)
 
 	isUserPost := ex.In_post_info.UserShard == int32(rdb.shardNum)
 	isSubredditPost := ex.In_post_info.SubredditShard == int32(rdb.shardNum)
 
-
 	subPostStmt := SubredditPosts.
-		UPDATE(SubredditPosts.NumberOfVotes).
-		SET(Int(int64(ex.ValueToAdd)).ADD(SubredditPosts.NumberOfVotes)).
+		UPDATE(subpost_columns_to_update).
+		SET(subpost_updated_values[0], subpost_updated_values[1:]...).
 		WHERE(CAST(table.SubredditPosts.ID).AS_TEXT().EQ(String(ex.In_post_info.Post.Id))).
-		RETURNING(SubredditPosts.NumberOfVotes)
+		RETURNING(SubredditPosts.AllColumns)
 
 	userPostStmt := AliasedUserPosts.
-		UPDATE(AliasedUserPosts.NumberOfVotes).
-		SET(Int(int64(ex.ValueToAdd)).ADD(AliasedUserPosts.NumberOfVotes)).
+		UPDATE(userpost_columns_to_update).
+		SET(userpost_updated_values[0], userpost_updated_values[1:]...).
 		WHERE(CAST(AliasedUserPosts.ID).AS_TEXT().EQ(String(ex.In_post_info.Post.Id))).
-		RETURNING(AliasedUserPosts.NumberOfVotes)
+		RETURNING(AliasedUserPosts.AllColumns)
 
 	result := PostDTO{}
 
@@ -319,7 +333,7 @@ func (ex *ChangeVoteValueForPostExecuter) Execute(rdb *rdbServer) (interface{}, 
 		err = userPostStmt.Query(db, &result)
 
 		if err != nil {
-			log.Printf("change vote value for post {Id: %s} command failed %v\n", ex.In_post_info.Post.Id, err)
+			log.Printf("update post {Id: %s} command failed %v\n", ex.In_post_info.Post.Id, err)
 			return 0, err
 		}
 	}
@@ -328,13 +342,11 @@ func (ex *ChangeVoteValueForPostExecuter) Execute(rdb *rdbServer) (interface{}, 
 		err = subPostStmt.Query(db, &result)
 
 		if err != nil {
-			log.Printf("change vote value for {Id: %s} command failed %v\n", ex.In_post_info.Post.Id, err)
+			log.Printf("update post {Id: %s} command failed %v\n", ex.In_post_info.Post.Id, err)
 			return 0, err
 		}
 	}
-
-
 	log.Printf("change vote value for command completed\n")
 
-	return result.NumberOfVotes, nil
+	return &result, nil
 }

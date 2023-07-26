@@ -88,9 +88,14 @@ func (rdb *rdbServer) GetPosts(ctx context.Context, message_info *pb.MessageInfo
 	}
 }
 
-func (rdb *rdbServer) PinUnpin(ctx context.Context, in_post_info *pb.PostInfo) (*pb.Post, error) {
+func (rdb *rdbServer) UpdatePost(ctx context.Context, in_post_info *pb.PostInfo) (*pb.Post, error) {
+
+	if len(in_post_info.UpdatedColumns) == 0 {
+		return nil, errors.New("0 columns passed to update post")
+	}
+
 	op := Op{
-		Executer: &PinUnpinPostExecuter{In_post_info: in_post_info},
+		Executer: &UpdatePostExecuter{In_post_info: in_post_info},
 		Id:       in_post_info.MessageInfo.Id,
 	}
 
@@ -104,56 +109,6 @@ func (rdb *rdbServer) PinUnpin(ctx context.Context, in_post_info *pb.PostInfo) (
 	case <-replyInfo.ch:
 		if replyInfo.err == nil {
 			return replyInfo.result.(*PostDTO).mapToProto(), nil
-		} else {
-			return &pb.Post{}, replyInfo.err
-		}
-	case <-time.After(time.Second): // ? magic number
-		return nil, errors.New("timed out")
-	}
-}
-
-func (rdb *rdbServer) UpVote(ctx context.Context, in_post_info *pb.PostInfo) (*pb.Post, error) {
-	op := Op{
-		Executer: &ChangeVoteValueForPostExecuter{In_post_info: in_post_info, ValueToAdd: 1},
-		Id:       in_post_info.MessageInfo.Id,
-	}
-
-	submited, replyInfo := rdb.submitOperationToRaft(op)
-
-	if !submited {
-		return nil, errors.New("not the leader")
-	}
-
-	select {
-	case <-replyInfo.ch:
-		if replyInfo.err == nil {
-			in_post_info.Post.NumberOfVotes = replyInfo.result.(int32)
-			return in_post_info.Post, nil
-		} else {
-			return &pb.Post{}, replyInfo.err
-		}
-	case <-time.After(time.Second): // ? magic number
-		return nil, errors.New("timed out")
-	}
-}
-
-func (rdb *rdbServer) DownVote(ctx context.Context, in_post_info *pb.PostInfo) (*pb.Post, error) {
-	op := Op{
-		Executer: &ChangeVoteValueForPostExecuter{In_post_info: in_post_info, ValueToAdd: -1},
-		Id:       in_post_info.MessageInfo.Id,
-	}
-
-	submited, replyInfo := rdb.submitOperationToRaft(op)
-
-	if !submited {
-		return nil, errors.New("not the leader")
-	}
-
-	select {
-	case <-replyInfo.ch:
-		if replyInfo.err == nil {
-			in_post_info.Post.NumberOfVotes = replyInfo.result.(int32)
-			return in_post_info.Post, nil
 		} else {
 			return &pb.Post{}, replyInfo.err
 		}

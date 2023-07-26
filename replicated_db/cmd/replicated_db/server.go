@@ -97,8 +97,7 @@ func main() {
 	gob.Register(&GetPostExecuter{})
 	gob.Register(&CreatePostExecuter{})
 	gob.Register(&GetPostsExecuter{})
-	gob.Register(&PinUnpinPostExecuter{})
-	gob.Register(&ChangeVoteValueForPostExecuter{})
+	gob.Register(&UpdatePostExecuter{})
 
 	// user
 	gob.Register(&GetUserExecuter{})

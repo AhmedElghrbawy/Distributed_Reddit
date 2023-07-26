@@ -92,6 +92,7 @@ service CommentGRPC {
     rpc AddComment(CommentInfo) returns (Comment);
     rpc UpVoteComment(CommentInfo) returns (Comment);
     rpc DownVoteComment(CommentInfo) returns (Comment);
+    rpc UpdateComment(CommentInfo) returns (Comment);
 }
 
 service TwoPhaseCommitGRPC {
@@ -143,6 +144,7 @@ message CommentInfo {
     int32 subreddit_shard = 3;
     TwoPhaseCommitInfo twopc_info = 4;
     MessageInfo message_info = 5;
+    repeated CommentUpdatedColumn updated_columns = 6;
 }
 
 message UserFollowage {
@@ -174,4 +176,10 @@ enum UserUpdatedColumn {
     DISPLAY_NAME = 0;
     AVATAR = 1;
     KARMA = 2;
+}
+
+enum CommentUpdatedColumn {
+    COMMENT_CONTENT = 0;
+    COMMENT_IMAGE = 1;
+    COMMENT_NUMBER_OF_VOTES = 2;
 }

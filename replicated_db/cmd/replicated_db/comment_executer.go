@@ -15,6 +15,18 @@ import (
 	"github.com/google/uuid"
 )
 
+var grpc_column_to_subcomment_column = map[pb.CommentUpdatedColumn]Column{
+	pb.CommentUpdatedColumn_COMMENT_CONTENT:         SubredditComments.Content,
+	pb.CommentUpdatedColumn_COMMENT_IMAGE:           SubredditComments.Image,
+	pb.CommentUpdatedColumn_COMMENT_NUMBER_OF_VOTES: SubredditComments.NumberOfVotes,
+}
+
+var grpc_column_to_usercomment_column = map[pb.CommentUpdatedColumn]Column{
+	pb.CommentUpdatedColumn_COMMENT_CONTENT:         AliasedUserComments.Content,
+	pb.CommentUpdatedColumn_COMMENT_IMAGE:           AliasedUserComments.Image,
+	pb.CommentUpdatedColumn_COMMENT_NUMBER_OF_VOTES: AliasedUserComments.NumberOfVotes,
+}
+
 type AddCommentExecuter struct {
 	In_comment_info *pb.CommentInfo
 }
@@ -146,7 +158,6 @@ func (ex *ChangeVoteValueForCommentExecuter) Execute(rdb *rdbServer) (interface{
 	isUserComment := ex.In_comment_info.UserShard == int32(rdb.shardNum)
 	isSubredditComment := ex.In_comment_info.SubredditShard == int32(rdb.shardNum)
 
-
 	subCommentStmt := SubredditComments.
 		UPDATE(SubredditComments.NumberOfVotes).
 		SET(Int(int64(ex.ValueToAdd)).ADD(SubredditComments.NumberOfVotes)).
@@ -182,4 +193,97 @@ func (ex *ChangeVoteValueForCommentExecuter) Execute(rdb *rdbServer) (interface{
 	log.Printf("change vote value for command completed\n")
 
 	return result.NumberOfVotes, nil
+}
+
+// returns (*CommentDTO, error): the comment after update or error
+type UpdateCommentExecuter struct {
+	In_comment_info      *pb.CommentInfo
+	Updated_column_value map[pb.CommentUpdatedColumn]interface{}
+}
+
+func (ex *UpdateCommentExecuter) Execute(rdb *rdbServer) (interface{}, error) {
+	ex.Updated_column_value = map[pb.CommentUpdatedColumn]interface{}{
+		pb.CommentUpdatedColumn_COMMENT_CONTENT:         ex.In_comment_info.Comment.Content,
+		pb.CommentUpdatedColumn_COMMENT_IMAGE:           ex.In_comment_info.Comment.Image,
+		pb.CommentUpdatedColumn_COMMENT_NUMBER_OF_VOTES: Int(int64(ex.In_comment_info.Comment.NumberOfVotes)),
+	}
+
+	subcomment_columns_to_update := ColumnList{}
+	for _, c := range ex.In_comment_info.UpdatedColumns {
+		subcomment_columns_to_update = append(subcomment_columns_to_update, grpc_column_to_subcomment_column[c])
+	}
+
+	usercomment_columns_to_update := ColumnList{}
+	for _, c := range ex.In_comment_info.UpdatedColumns {
+		usercomment_columns_to_update = append(usercomment_columns_to_update, grpc_column_to_usercomment_column[c])
+	}
+
+	subcomment_updated_values := make([]interface{}, 0)
+
+	for _, c := range ex.In_comment_info.UpdatedColumns {
+		if c == pb.CommentUpdatedColumn_COMMENT_NUMBER_OF_VOTES {
+			value := ex.Updated_column_value[c].(IntegerExpression).ADD(SubredditComments.NumberOfVotes)
+			subcomment_updated_values = append(subcomment_updated_values, value)
+		} else {
+			subcomment_updated_values = append(subcomment_updated_values, ex.Updated_column_value[c])
+		}
+	}
+
+	usercomment_updated_values := make([]interface{}, 0)
+
+	for _, c := range ex.In_comment_info.UpdatedColumns {
+		if c == pb.CommentUpdatedColumn_COMMENT_NUMBER_OF_VOTES {
+			value := ex.Updated_column_value[c].(IntegerExpression).ADD(AliasedUserComments.NumberOfVotes)
+			usercomment_updated_values = append(usercomment_updated_values, value)
+		} else {
+			usercomment_updated_values = append(usercomment_updated_values, ex.Updated_column_value[c])
+		}
+	}
+	db, err := sql.Open("postgres", rdb.dbConnectionStr)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	log.Printf("Preparing to update post {Id: %s} columns: %v, values: %v\n", ex.In_comment_info.Comment.Id, usercomment_columns_to_update, usercomment_updated_values)
+
+	isUserComment := ex.In_comment_info.UserShard == int32(rdb.shardNum)
+	isSubredditComment := ex.In_comment_info.SubredditShard == int32(rdb.shardNum)
+
+	subCommentStmt := SubredditComments.
+		UPDATE(subcomment_columns_to_update).
+		SET(subcomment_updated_values[0], subcomment_updated_values[1:]...).
+		WHERE(CAST(table.SubredditComments.ID).AS_TEXT().EQ(String(ex.In_comment_info.Comment.Id))).
+		RETURNING(SubredditComments.AllColumns)
+
+	userCommentStmt := AliasedUserComments.
+		UPDATE(usercomment_columns_to_update).
+		SET(usercomment_updated_values[0], usercomment_updated_values[1:]...).
+		WHERE(CAST(AliasedUserComments.ID).AS_TEXT().EQ(String(ex.In_comment_info.Comment.Id))).
+		RETURNING(AliasedUserComments.AllColumns)
+
+	result := CommentDTO{}
+
+	if isUserComment {
+		err = userCommentStmt.Query(db, &result)
+
+		if err != nil {
+			log.Printf("update comment {Id: %s} command failed %v\n", ex.In_comment_info.Comment.Id, err)
+			return 0, err
+		}
+	}
+
+	if isSubredditComment {
+		err = subCommentStmt.Query(db, &result)
+
+		if err != nil {
+			log.Printf("update {Id: %s} command failed %v\n", ex.In_comment_info.Comment.Id, err)
+			return 0, err
+		}
+	}
+
+	log.Printf("change vote value for command completed\n")
+
+	return &result, nil
+
 }

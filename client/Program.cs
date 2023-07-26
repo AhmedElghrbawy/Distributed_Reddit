@@ -12,7 +12,7 @@ var handler = new HttpClientHandler
     ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
 };
 
-using var channel = GrpcChannel.ForAddress("http://localhost:50050");
+using var channel = GrpcChannel.ForAddress("http://localhost:50052");
 
 var postClient = new PostGRPC.PostGRPCClient(channel);
 var twopcClient = new TwoPhaseCommitGRPC.TwoPhaseCommitGRPCClient(channel);
@@ -105,9 +105,9 @@ var membership = new UserSubredditMembership {
 var commentInfo = new CommentInfo {
     Comment = new Comment {
         Content = "bufflo",
-        Id = "9c8c468c-f180-46f3-ad63-af5832e17d43",
+        Id = "9c8c468c-f180-46f3-ad63-af5832e17d41",
         Image = ByteString.CopyFrom("e#>&*m16", Encoding.Unicode),
-        NumberOfVotes = 0,
+        NumberOfVotes = 1,
         OwnerHandle = "Ahmed",
         PostId = "9c8c468c-f180-46f3-ad63-af5832e17d41",
         ParentCommentId = "9c8c468c-f180-46f3-ad63-af5832e17d41",
@@ -122,9 +122,11 @@ var commentInfo = new CommentInfo {
     }
 };
 
+commentInfo.UpdatedColumns.AddRange(new[] {CommentUpdatedColumn.CommentNumberOfVotes, CommentUpdatedColumn.CommentContent});
+
 // System.Console.WriteLine(subInfo);
 
-var reply = await userClient.UpdateUserAsync(userInfo);
+var reply = await commentClient.UpdateCommentAsync(commentInfo);
 
 // var reply = await twopcClient.RollbackAsync(twopcInfo);
 

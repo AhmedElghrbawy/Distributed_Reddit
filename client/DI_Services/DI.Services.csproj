@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\TransactionManager\TransactionManager.csproj" />
+    <ProjectReference Include="../TransactionManager/RDB.TransactionManager.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

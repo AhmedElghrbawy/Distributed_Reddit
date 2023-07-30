@@ -66,6 +66,8 @@ const (
 	db_user = "postgres"
 )
 
+const replyTimoutDuration = time.Second
+
 /*
 example: ./prog shardNum replicaNum
 */
@@ -163,7 +165,7 @@ func (rdb *rdbServer) applyCommands() {
 			replyInfo.ch <- struct{}{}
 			select {
 			case replyInfo.ch <- struct{}{}:
-			case <-time.After(time.Second): // ? magic number
+			case <-time.After(replyTimoutDuration):
 			}
 		}
 

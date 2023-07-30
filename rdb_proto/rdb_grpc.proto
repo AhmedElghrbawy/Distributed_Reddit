@@ -61,7 +61,8 @@ message Comment {
     string post_id = 7; 
 }
  
-
+// ! All services timeout duration are 1 second. 
+// https://grpc.io/blog/deadlines/
 
 service SubredditGRPC {
     // we only need the subreddit handle (string)

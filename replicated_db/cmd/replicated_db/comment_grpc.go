@@ -17,7 +17,7 @@ func (rdb *rdbServer) AddComment(ctx context.Context, in_comment_info *pb.Commen
 	submited, replyInfo := rdb.submitOperationToRaft(op)
 
 	if !submited {
-		return nil, errors.New("not the leader")
+		return nil, rdb_grpc_error_map[NOT_THE_LEADER]
 	}
 
 	select {
@@ -27,11 +27,10 @@ func (rdb *rdbServer) AddComment(ctx context.Context, in_comment_info *pb.Commen
 		} else {
 			return &pb.Comment{}, replyInfo.err
 		}
-	case <-time.After(time.Second): // ? magic number
-		return nil, errors.New("timed out")
+	case <-time.After(replyTimoutDuration):
+		return nil, rdb_grpc_error_map[SERVER_RESPONSE_TIMEOUT]
 	}
 }
-
 
 func (rdb *rdbServer) UpdateComment(ctx context.Context, in_comment_info *pb.CommentInfo) (*pb.Comment, error) {
 
@@ -47,7 +46,7 @@ func (rdb *rdbServer) UpdateComment(ctx context.Context, in_comment_info *pb.Com
 	submited, replyInfo := rdb.submitOperationToRaft(op)
 
 	if !submited {
-		return nil, errors.New("not the leader")
+		return nil, rdb_grpc_error_map[NOT_THE_LEADER]
 	}
 
 	select {
@@ -57,7 +56,7 @@ func (rdb *rdbServer) UpdateComment(ctx context.Context, in_comment_info *pb.Com
 		} else {
 			return &pb.Comment{}, replyInfo.err
 		}
-	case <-time.After(time.Second): // ? magic number
-		return nil, errors.New("timed out")
+	case <-time.After(replyTimoutDuration):
+		return nil, rdb_grpc_error_map[SERVER_RESPONSE_TIMEOUT]
 	}
 }

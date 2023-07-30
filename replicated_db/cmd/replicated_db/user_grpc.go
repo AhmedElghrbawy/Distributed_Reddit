@@ -28,7 +28,7 @@ func (rdb *rdbServer) GetUser(ctx context.Context, in_user_info *pb.UserInfo) (*
 		} else {
 			return &pb.User{}, replyInfo.err
 		}
-	case <-time.After(time.Second):
+	case <-time.After(replyTimoutDuration):
 		return nil, rdb_grpc_error_map[SERVER_RESPONSE_TIMEOUT]
 	}
 }
@@ -52,7 +52,7 @@ func (rdb *rdbServer) CreateUser(ctx context.Context, in_user_info *pb.UserInfo)
 		} else {
 			return &pb.User{}, replyInfo.err
 		}
-	case <-time.After(time.Second):
+	case <-time.After(replyTimoutDuration):
 		return nil, rdb_grpc_error_map[SERVER_RESPONSE_TIMEOUT]
 	}
 }
@@ -76,7 +76,7 @@ func (rdb *rdbServer) Follow(ctx context.Context, user_followage_info *pb.UserFo
 		} else {
 			return nil, replyInfo.err
 		}
-	case <-time.After(time.Second):
+	case <-time.After(replyTimoutDuration):
 		return nil, rdb_grpc_error_map[SERVER_RESPONSE_TIMEOUT]
 	}
 }
@@ -100,7 +100,7 @@ func (rdb *rdbServer) Unfollow(ctx context.Context, user_followage_info *pb.User
 		} else {
 			return nil, replyInfo.err
 		}
-	case <-time.After(time.Second):
+	case <-time.After(replyTimoutDuration):
 		return nil, rdb_grpc_error_map[SERVER_RESPONSE_TIMEOUT]
 	}
 }
@@ -124,7 +124,7 @@ func (rdb *rdbServer) JoinSubreddit(ctx context.Context, membership_info *pb.Use
 		} else {
 			return nil, replyInfo.err
 		}
-	case <-time.After(time.Second):
+	case <-time.After(replyTimoutDuration):
 		return nil, rdb_grpc_error_map[SERVER_RESPONSE_TIMEOUT]
 	}
 }
@@ -148,7 +148,7 @@ func (rdb *rdbServer) LeaveSubreddit(ctx context.Context, membership_info *pb.Us
 		} else {
 			return nil, replyInfo.err
 		}
-	case <-time.After(time.Second):
+	case <-time.After(replyTimoutDuration):
 		return nil, rdb_grpc_error_map[SERVER_RESPONSE_TIMEOUT]
 	}
 }
@@ -176,7 +176,7 @@ func (rdb *rdbServer) UpdateUser(ctx context.Context, in_user_info *pb.UserInfo)
 		} else {
 			return nil, replyInfo.err
 		}
-	case <-time.After(time.Second):
+	case <-time.After(replyTimoutDuration):
 		return nil, rdb_grpc_error_map[SERVER_RESPONSE_TIMEOUT]
 	}
 

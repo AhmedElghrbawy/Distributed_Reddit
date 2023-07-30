@@ -27,7 +27,7 @@ func (rdb *rdbServer) Commit(ctx context.Context, twopc_info *pb.TwoPhaseCommitI
 		} else {
 			return &emptypb.Empty{}, replyInfo.err
 		}
-	case <-time.After(time.Second):
+	case <-time.After(replyTimoutDuration):
 		return nil, rdb_grpc_error_map[SERVER_RESPONSE_TIMEOUT]
 	}
 }
@@ -51,7 +51,7 @@ func (rdb *rdbServer) Rollback(ctx context.Context, twopc_info *pb.TwoPhaseCommi
 		} else {
 			return &emptypb.Empty{}, replyInfo.err
 		}
-	case <-time.After(time.Second):
+	case <-time.After(replyTimoutDuration):
 		return nil, rdb_grpc_error_map[SERVER_RESPONSE_TIMEOUT]
 	}
 }

@@ -18,7 +18,7 @@ func (rdb *rdbServer) GetUser(ctx context.Context, in_user_info *pb.UserInfo) (*
 	submited, replyInfo := rdb.submitOperationToRaft(op)
 
 	if !submited {
-		return nil, errors.New("not the leader")
+		return nil, rdb_grpc_error_map[NOT_THE_LEADER]
 	}
 
 	select {
@@ -42,7 +42,7 @@ func (rdb *rdbServer) CreateUser(ctx context.Context, in_user_info *pb.UserInfo)
 	submited, replyInfo := rdb.submitOperationToRaft(op)
 
 	if !submited {
-		return nil, errors.New("not the leader")
+		return nil, rdb_grpc_error_map[NOT_THE_LEADER]
 	}
 
 	select {
@@ -66,7 +66,7 @@ func (rdb *rdbServer) Follow(ctx context.Context, user_followage_info *pb.UserFo
 	submited, replyInfo := rdb.submitOperationToRaft(op)
 
 	if !submited {
-		return nil, errors.New("not the leader")
+		return nil, rdb_grpc_error_map[NOT_THE_LEADER]
 	}
 
 	select {
@@ -90,7 +90,7 @@ func (rdb *rdbServer) Unfollow(ctx context.Context, user_followage_info *pb.User
 	submited, replyInfo := rdb.submitOperationToRaft(op)
 
 	if !submited {
-		return nil, errors.New("not the leader")
+		return nil, rdb_grpc_error_map[NOT_THE_LEADER]
 	}
 
 	select {
@@ -114,7 +114,7 @@ func (rdb *rdbServer) JoinSubreddit(ctx context.Context, membership_info *pb.Use
 	submited, replyInfo := rdb.submitOperationToRaft(op)
 
 	if !submited {
-		return nil, errors.New("not the leader")
+		return nil, rdb_grpc_error_map[NOT_THE_LEADER]
 	}
 
 	select {
@@ -138,7 +138,7 @@ func (rdb *rdbServer) LeaveSubreddit(ctx context.Context, membership_info *pb.Us
 	submited, replyInfo := rdb.submitOperationToRaft(op)
 
 	if !submited {
-		return nil, errors.New("not the leader")
+		return nil, rdb_grpc_error_map[NOT_THE_LEADER]
 	}
 
 	select {
@@ -166,7 +166,7 @@ func (rdb *rdbServer) UpdateUser(ctx context.Context, in_user_info *pb.UserInfo)
 	submited, replyInfo := rdb.submitOperationToRaft(op)
 
 	if !submited {
-		return nil, errors.New("not the leader")
+		return nil, rdb_grpc_error_map[NOT_THE_LEADER]
 	}
 
 	select {

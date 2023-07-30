@@ -17,7 +17,7 @@ func (rdb *rdbServer) GetSubreddit(ctx context.Context, in_subreddit_info *pb.Su
 	submited, replyInfo := rdb.submitOperationToRaft(op)
 
 	if !submited {
-		return nil, errors.New("not the leader")
+		return nil, rdb_grpc_error_map[NOT_THE_LEADER]
 	}
 
 	select {
@@ -46,7 +46,7 @@ func (rdb *rdbServer) CreateSubreddit(ctx context.Context, in_subreddit_info *pb
 	submited, replyInfo := rdb.submitOperationToRaft(op)
 
 	if !submited {
-		return nil, errors.New("not the leader")
+		return nil, rdb_grpc_error_map[NOT_THE_LEADER]
 	}
 
 	select {
@@ -70,7 +70,7 @@ func (rdb *rdbServer) GetSubredditsHandles(ctx context.Context, message_info *pb
 	submited, replyInfo := rdb.submitOperationToRaft(op)
 
 	if !submited {
-		return nil, errors.New("not the leader")
+		return nil, rdb_grpc_error_map[NOT_THE_LEADER]
 	}
 
 	select {

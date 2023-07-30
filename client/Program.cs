@@ -12,25 +12,25 @@ var handler = new HttpClientHandler
     ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
 };
 
-using var channel = GrpcChannel.ForAddress("http://localhost:50052");
+using var channel = GrpcChannel.ForAddress("http://localhost:50050");
 
 var postClient = new PostGRPC.PostGRPCClient(channel);
 var twopcClient = new TwoPhaseCommitGRPC.TwoPhaseCommitGRPCClient(channel);
 var userClient = new UserGRPC.UserGRPCClient(channel);
 var commentClient = new CommentGRPC.CommentGRPCClient(channel);
 
-// var subInfo = new SubredditInfo{
-//     Subreddit = new Subreddit{
-//         Handle = "Hell",
-//         Title = "Titil",
-//         About = "Hello this is hell",
-//         Avatar = ByteString.CopyFrom("e#>&*m16", Encoding.Unicode),
-//         CreatedAt = DateTimeOffset.UtcNow.ToTimestamp(),
-//     },
-//     MessageInfo = new MessageInfo{
-//         Id = "first_message",
-//     }    
-// };
+var subInfo = new SubredditInfo{
+    Subreddit = new Subreddit{
+        Handle = "Hell",
+        Title = "Titil",
+        About = "Hello this is hell",
+        Avatar = ByteString.CopyFrom("e#>&*m16", Encoding.Unicode),
+        CreatedAt = DateTimeOffset.UtcNow.ToTimestamp(),
+    },
+    MessageInfo = new MessageInfo{
+        Id = "first_message",
+    }    
+};
 
 // subInfo.Subreddit.AdminsHandles.AddRange(new [] { "Hero", "Sayed", "paka" });
 
@@ -126,7 +126,7 @@ commentInfo.UpdatedColumns.AddRange(new[] {CommentUpdatedColumn.CommentNumberOfV
 
 // System.Console.WriteLine(subInfo);
 
-var reply = await commentClient.UpdateCommentAsync(commentInfo);
+var reply = await postClient.CreatePostAsync(postInfo);
 
 // var reply = await twopcClient.RollbackAsync(twopcInfo);
 

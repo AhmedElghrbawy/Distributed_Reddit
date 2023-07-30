@@ -18,7 +18,7 @@ func (rdb *rdbServer) Commit(ctx context.Context, twopc_info *pb.TwoPhaseCommitI
 	submited, replyInfo := rdb.submitOperationToRaft(op)
 
 	if !submited {
-		return nil, errors.New("not the leader")
+		return nil, rdb_grpc_error_map[NOT_THE_LEADER]
 	}
 
 	select {
@@ -42,7 +42,7 @@ func (rdb *rdbServer) Rollback(ctx context.Context, twopc_info *pb.TwoPhaseCommi
 	submited, replyInfo := rdb.submitOperationToRaft(op)
 
 	if !submited {
-		return nil, errors.New("not the leader")
+		return nil, rdb_grpc_error_map[NOT_THE_LEADER]
 	}
 
 	select {

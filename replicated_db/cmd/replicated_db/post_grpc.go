@@ -17,7 +17,7 @@ func (rdb *rdbServer) GetPost(ctx context.Context, in_post_info *pb.PostInfo) (*
 	submited, replyInfo := rdb.submitOperationToRaft(op)
 
 	if !submited {
-		return nil, errors.New("not the leader")
+		return nil, rdb_grpc_error_map[NOT_THE_LEADER]
 	}
 
 	select {
@@ -42,7 +42,7 @@ func (rdb *rdbServer) CreatePost(ctx context.Context, in_post_info *pb.PostInfo)
 	submited, replyInfo := rdb.submitOperationToRaft(op)
 
 	if !submited {
-		return nil, errors.New("not the leader")
+		return nil, rdb_grpc_error_map[NOT_THE_LEADER]
 	}
 
 	select {
@@ -66,7 +66,7 @@ func (rdb *rdbServer) GetPosts(ctx context.Context, message_info *pb.MessageInfo
 	submited, replyInfo := rdb.submitOperationToRaft(op)
 
 	if !submited {
-		return nil, errors.New("not the leader")
+		return nil, rdb_grpc_error_map[NOT_THE_LEADER]
 	}
 
 	select {
@@ -102,7 +102,7 @@ func (rdb *rdbServer) UpdatePost(ctx context.Context, in_post_info *pb.PostInfo)
 	submited, replyInfo := rdb.submitOperationToRaft(op)
 
 	if !submited {
-		return nil, errors.New("not the leader")
+		return nil, rdb_grpc_error_map[NOT_THE_LEADER]
 	}
 
 	select {

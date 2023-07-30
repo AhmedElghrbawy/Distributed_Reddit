@@ -163,7 +163,7 @@ func (rdb *rdbServer) applyCommands() {
 			replyInfo.ch <- struct{}{}
 			select {
 			case replyInfo.ch <- struct{}{}:
-			case <-time.After(time.Second): // ? magic number
+			case <-time.After(time.Second):
 			}
 		}
 

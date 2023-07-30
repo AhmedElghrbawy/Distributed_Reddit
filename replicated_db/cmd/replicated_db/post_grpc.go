@@ -27,8 +27,8 @@ func (rdb *rdbServer) GetPost(ctx context.Context, in_post_info *pb.PostInfo) (*
 		} else {
 			return &pb.Post{}, replyInfo.err
 		}
-	case <-time.After(time.Second): // ? magic number
-		return nil, errors.New("timed out")
+	case <-time.After(time.Second):
+		return nil, rdb_grpc_error_map[SERVER_RESPONSE_TIMEOUT]
 	}
 
 }
@@ -52,8 +52,8 @@ func (rdb *rdbServer) CreatePost(ctx context.Context, in_post_info *pb.PostInfo)
 		} else {
 			return &pb.Post{}, replyInfo.err
 		}
-	case <-time.After(time.Second): // ? magic number
-		return nil, errors.New("timed out")
+	case <-time.After(time.Second):
+		return nil, rdb_grpc_error_map[SERVER_RESPONSE_TIMEOUT]
 	}
 }
 
@@ -83,8 +83,8 @@ func (rdb *rdbServer) GetPosts(ctx context.Context, message_info *pb.MessageInfo
 		} else {
 			return nil, replyInfo.err
 		}
-	case <-time.After(time.Second): // ? magic number
-		return nil, errors.New("timed out")
+	case <-time.After(time.Second):
+		return nil, rdb_grpc_error_map[SERVER_RESPONSE_TIMEOUT]
 	}
 }
 
@@ -112,7 +112,7 @@ func (rdb *rdbServer) UpdatePost(ctx context.Context, in_post_info *pb.PostInfo)
 		} else {
 			return &pb.Post{}, replyInfo.err
 		}
-	case <-time.After(time.Second): // ? magic number
-		return nil, errors.New("timed out")
+	case <-time.After(time.Second):
+		return nil, rdb_grpc_error_map[SERVER_RESPONSE_TIMEOUT]
 	}
 }

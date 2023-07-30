@@ -27,8 +27,8 @@ func (rdb *rdbServer) AddComment(ctx context.Context, in_comment_info *pb.Commen
 		} else {
 			return &pb.Comment{}, replyInfo.err
 		}
-	case <-time.After(time.Second): // ? magic number
-		return nil, errors.New("timed out")
+	case <-time.After(time.Second):
+		return nil, rdb_grpc_error_map[SERVER_RESPONSE_TIMEOUT]
 	}
 }
 
@@ -56,7 +56,7 @@ func (rdb *rdbServer) UpdateComment(ctx context.Context, in_comment_info *pb.Com
 		} else {
 			return &pb.Comment{}, replyInfo.err
 		}
-	case <-time.After(time.Second): // ? magic number
-		return nil, errors.New("timed out")
+	case <-time.After(time.Second):
+		return nil, rdb_grpc_error_map[SERVER_RESPONSE_TIMEOUT]
 	}
 }

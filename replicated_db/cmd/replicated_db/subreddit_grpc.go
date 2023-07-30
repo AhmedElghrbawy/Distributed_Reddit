@@ -27,8 +27,8 @@ func (rdb *rdbServer) GetSubreddit(ctx context.Context, in_subreddit_info *pb.Su
 		} else {
 			return &pb.Subreddit{}, replyInfo.err
 		}
-	case <-time.After(time.Second): // ? magic number
-		return nil, errors.New("timed out")
+	case <-time.After(time.Second):
+		return nil, rdb_grpc_error_map[SERVER_RESPONSE_TIMEOUT]
 	}
 
 }
@@ -56,8 +56,8 @@ func (rdb *rdbServer) CreateSubreddit(ctx context.Context, in_subreddit_info *pb
 		} else {
 			return &pb.Subreddit{}, replyInfo.err
 		}
-	case <-time.After(time.Second): // ? magic number
-		return nil, errors.New("timed out")
+	case <-time.After(time.Second):
+		return nil, rdb_grpc_error_map[SERVER_RESPONSE_TIMEOUT]
 	}
 }
 
@@ -87,7 +87,7 @@ func (rdb *rdbServer) GetSubredditsHandles(ctx context.Context, message_info *pb
 		} else {
 			return nil, replyInfo.err
 		}
-	case <-time.After(time.Second): // ? magic number
-		return nil, errors.New("timed out")
+	case <-time.After(time.Second):
+		return nil, rdb_grpc_error_map[SERVER_RESPONSE_TIMEOUT]
 	}
 }

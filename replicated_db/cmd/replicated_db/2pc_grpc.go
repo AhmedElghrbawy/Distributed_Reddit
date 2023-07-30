@@ -2,7 +2,6 @@ package main
 
 import (
 	context "context"
-	"errors"
 	"time"
 
 	pb "github.com/ahmedelghrbawy/replicated_db/pkg/rdb_grpc"
@@ -28,8 +27,8 @@ func (rdb *rdbServer) Commit(ctx context.Context, twopc_info *pb.TwoPhaseCommitI
 		} else {
 			return &emptypb.Empty{}, replyInfo.err
 		}
-	case <-time.After(time.Second): // ? magic number
-		return nil, errors.New("timed out")
+	case <-time.After(time.Second):
+		return nil, rdb_grpc_error_map[SERVER_RESPONSE_TIMEOUT]
 	}
 }
 
@@ -52,7 +51,7 @@ func (rdb *rdbServer) Rollback(ctx context.Context, twopc_info *pb.TwoPhaseCommi
 		} else {
 			return &emptypb.Empty{}, replyInfo.err
 		}
-	case <-time.After(time.Second): // ? magic number
-		return nil, errors.New("timed out")
+	case <-time.After(time.Second):
+		return nil, rdb_grpc_error_map[SERVER_RESPONSE_TIMEOUT]
 	}
 }

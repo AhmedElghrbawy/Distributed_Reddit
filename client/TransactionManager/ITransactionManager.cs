@@ -1,6 +1,8 @@
-﻿namespace RDB.TransactionManager;
+﻿using Google.Protobuf;
+
+namespace RDB.TransactionManager;
 
 public interface ITransactionManager
 {
-    string SubmitTransactions(List<string> txs);
+    Task<List<IMessage>> SubmitTransactionsAsync(List<TransactionInfo> txs);
 }

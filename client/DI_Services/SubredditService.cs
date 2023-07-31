@@ -1,18 +1,19 @@
 ﻿using RDB.TransactionManager;
+using rdb_grpc;
 
 namespace DI_Services;
 
 public class SubredditService
 {
-    private readonly ITransactionManager _tx;
+    private readonly SubredditTransactionManager _txManager;
 
-    public SubredditService(ITransactionManager tx)
+    public SubredditService(SubredditTransactionManager subredditTxManager)
     {
-        _tx = tx;
+        _txManager = subredditTxManager;
     }
 
-    public string CreateSubreddit()
+    public async Task<Subreddit> CreateSubredditAsync(Subreddit subreddit)
     {
-        return _tx.SubmitTransactions(new List<string> {"Hey", "you", "there"});
+        return await _txManager.CreateSubredditAsync(subreddit);
     }
 }

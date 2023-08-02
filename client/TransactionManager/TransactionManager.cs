@@ -12,8 +12,8 @@ namespace RDB.TransactionManager;
 public class TransactionManager : ITransactionManager
 {
     private readonly ITransactionManagerConfig _config;
-    private static readonly TimeSpan _transactionTimeoutPeriod = TimeSpan.FromMilliseconds(1500); 
-    private static readonly TimeSpan _callTimeoutPeriod = TimeSpan.FromMilliseconds(500); 
+    private static readonly TimeSpan _transactionTimeoutPeriod = TimeSpan.FromMilliseconds(2000); 
+    private static readonly TimeSpan _callTimeoutPeriod = TimeSpan.FromMilliseconds(600); 
 
     public TransactionManager(ITransactionManagerConfig config)
     {

@@ -23,8 +23,7 @@ public class SubredditTransactionManager
 
     public async Task<Subreddit> CreateSubredditAsync(Subreddit subreddit)
     {
-        // int shardNumber = GetSubreddditShardNumber(subreddit, _config.NumberOfShards);
-        int shardNumber = 0;
+        int shardNumber = GetSubreddditShardNumber(subreddit, _config.NumberOfShards);
         var clients = new List<ClientBase>();
         for (int i = 0; i < _config.NumberOfReplicas; i++)
         {
@@ -60,6 +59,6 @@ public class SubredditTransactionManager
     private static int GetSubreddditShardNumber(Subreddit subreddit, int nShards)
     {
         // ! string.GetHashCode() is randomized in .NET core
-        return subreddit.Handle.GetHashCode() % nShards;
+        return subreddit.Handle.GetDeterministicHashCode().Mod(nShards);
     }
 }

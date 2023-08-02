@@ -42,12 +42,12 @@ public class SubredditTransactionManager
             }
         };
 
-        static async Task<IMessage> execFunc(IMessage inputMessage, ClientBase client)
+        static async Task<IMessage> execFunc(IMessage inputMessage, ClientBase client, CancellationToken cancellationToken)
         {
             var SubredditClient = (SubredditGRPC.SubredditGRPCClient)client;
             var inputSubredditInfo = (SubredditInfo)inputMessage;
 
-            return (IMessage)await SubredditClient.CreateSubredditAsync(inputSubredditInfo);
+            return (IMessage)await SubredditClient.CreateSubredditAsync(inputSubredditInfo, cancellationToken: cancellationToken);
         }
 
         var txInfo = new TransactionInfo(clients, execFunc, subredditInfo);

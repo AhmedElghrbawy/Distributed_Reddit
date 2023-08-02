@@ -3,4 +3,8 @@ using Grpc.Core;
 
 namespace RDB.TransactionManager;
 
-public record class TransactionInfo(List<ClientBase> Clients, Func<IMessage, ClientBase, Task<IMessage>> ExecutionFunction, IMessage InputMessage);
+public record class TransactionInfo(
+        List<ClientBase> Clients,
+        Func<IMessage, ClientBase, CancellationToken, Task<IMessage>> ExecutionFunction, 
+        IMessage InputMessage
+    );

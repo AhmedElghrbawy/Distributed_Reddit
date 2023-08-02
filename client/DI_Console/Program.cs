@@ -62,7 +62,7 @@ IServiceProvider provider = serviceScope.ServiceProvider;
 var SubredditService = provider.GetRequiredService<SubredditService>();
 
 var subreddit = new Subreddit{
-        Handle = "Ayooooooo",
+        Handle = "623423",
         Title = "ff15",
         About = "Hello this is hell",
         Avatar = ByteString.CopyFrom("e#>&*m16", Encoding.Unicode),

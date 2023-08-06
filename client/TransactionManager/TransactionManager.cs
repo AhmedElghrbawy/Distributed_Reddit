@@ -67,13 +67,21 @@ public class TransactionManager : ITransactionManager
         {
             // should start a task in the background to abort these transactions
             System.Console.WriteLine("preparing tx error: " + ex.Message);
+            
+            foreach (var tx in txs)
+            {
+                // no need to await here
+                // we can report failure to the client and this will run in the background
+                RollbackPreparedTransactionAsync(tx.TransactionId, tx.ShardNumber);
+            }
+        
             return preparedTxsResults.ToList();
         }
         System.Console.WriteLine("prepareation phase done");
 
         // commitment phase
 
-        var commitedTransactionsTasks = txs.Select(tx => CommitPreparedTransaction(tx.TransactionId, tx.ShardNumber));
+        var commitedTransactionsTasks = txs.Select(tx => CommitPreparedTransactionAsync(tx.TransactionId, tx.ShardNumber));
 
         await Task.WhenAll(commitedTransactionsTasks);
         
@@ -135,7 +143,34 @@ public class TransactionManager : ITransactionManager
         throw new UnreachableException(); 
     }
 
-    private async Task CommitPreparedTransaction(Guid transactionId, int shardNumber)
+    private async Task CommitPreparedTransactionAsync(Guid transactionId, int shardNumber)
+    {
+        static async Task<IMessage> execFunc(IMessage inputMessage, ClientBase client, CancellationToken cancellationToken)
+        {
+            var twopcClient = (TwoPhaseCommitGRPC.TwoPhaseCommitGRPCClient)client;
+            var inputTwopcInfo = (TwoPhaseCommitInfo)inputMessage;
+
+            return (IMessage)await twopcClient.CommitAsync(inputTwopcInfo, cancellationToken: cancellationToken);
+        }
+
+        await RunCommitmentPhaseAsync(transactionId, shardNumber, execFunc);
+    }
+
+    private async Task RollbackPreparedTransactionAsync(Guid transactionId, int shardNumber)
+    {
+        static async Task<IMessage> execFunc(IMessage inputMessage, ClientBase client, CancellationToken cancellationToken)
+        {
+            var twopcClient = (TwoPhaseCommitGRPC.TwoPhaseCommitGRPCClient)client;
+            var inputTwopcInfo = (TwoPhaseCommitInfo)inputMessage;
+
+            return (IMessage)await twopcClient.RollbackAsync(inputTwopcInfo, cancellationToken: cancellationToken);
+        }
+
+        await RunCommitmentPhaseAsync(transactionId, shardNumber, execFunc);
+    }
+
+
+    private async Task RunCommitmentPhaseAsync(Guid transactionId, int shardNumber, Func<IMessage, ClientBase, CancellationToken, Task<IMessage>> execFunc)
     {
         var clients = new List<ClientBase>();
         for (int i = 0; i < _config.NumberOfReplicas; i++)
@@ -152,16 +187,7 @@ public class TransactionManager : ITransactionManager
         };
 
 
-        static async Task<IMessage> execFunc(IMessage inputMessage, ClientBase client, CancellationToken cancellationToken)
-        {
-            var twopcClient = (TwoPhaseCommitGRPC.TwoPhaseCommitGRPCClient)client;
-            var inputTwopcInfo = (TwoPhaseCommitInfo)inputMessage;
-
-            return (IMessage)await twopcClient.CommitAsync(inputTwopcInfo, cancellationToken: cancellationToken);
-        }
-
         var txInfo = new TransactionInfo(transactionId, shardNumber, clients, execFunc, twopcInfo);
-        
         await RunTransactionAsync(txInfo, CancellationToken.None);
     }
 }

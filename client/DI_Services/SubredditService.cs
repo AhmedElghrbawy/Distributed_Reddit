@@ -1,7 +1,7 @@
 ﻿using RDB.TransactionManager;
 using rdb_grpc;
 
-namespace DI_Services;
+namespace DI.Services;
 
 public class SubredditService
 {

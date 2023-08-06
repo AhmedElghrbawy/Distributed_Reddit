@@ -31,11 +31,11 @@ func (ex *CommitExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 	_, err = commitStmt.Exec(db)
 
 	if err != nil {
-		log.Printf("failed to commit prepared tx {Id: %s}.\n", ex.Twopc_info.TransactionId)
+		log.Printf("failed to commit prepared tx {Id: %s}. %v\n", preparedTxId, err)
 		return false, err
 	}
 
-	log.Printf("successfully commited prepared tx {Id: %s}\n", ex.Twopc_info.TransactionId)
+	log.Printf("successfully commited prepared tx {Id: %s}\n", preparedTxId)
 	return true, nil
 }
 

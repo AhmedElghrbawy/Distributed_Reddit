@@ -49,14 +49,14 @@ public class SubredditTransactionManager
             return (IMessage)await SubredditClient.CreateSubredditAsync(inputSubredditInfo, cancellationToken: cancellationToken);
         }
 
-        var txInfo = new TransactionInfo(clients, execFunc, subredditInfo);
+        var txInfo = new TransactionInfo(Guid.NewGuid(), shardNumber, clients, execFunc, subredditInfo);
 
         var result = await _txManager.SubmitTransactionsAsync(new List<TransactionInfo> {txInfo});
 
         return (Subreddit) result[0];
     }
 
-    private static int GetSubreddditShardNumber(Subreddit subreddit, int nShards)
+    internal static int GetSubreddditShardNumber(Subreddit subreddit, int nShards)
     {
         // ! string.GetHashCode() is randomized in .NET core
         return subreddit.Handle.GetDeterministicHashCode().Mod(nShards);

@@ -1,5 +1,4 @@
-﻿using DI_Services;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using RDB.TransactionManager;
@@ -8,6 +7,7 @@ using rdb_grpc;
 using Google.Protobuf;
 using System.Text;
 using Google.Protobuf.WellKnownTypes;
+using DI.Services;
 
 var configuration = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
@@ -20,9 +20,11 @@ var txManagerConfig = JsonSerializer.Deserialize<TransactionManagerConfig>(File.
 
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddTransient<ITransactionManager, TransactionManager>();
+builder.Services.AddSingleton<ITransactionManager, TransactionManager>();
 builder.Services.AddTransient<SubredditService>();
+builder.Services.AddTransient<PostService>();
 builder.Services.AddTransient<SubredditTransactionManager>();
+builder.Services.AddTransient<PostTransactionManager>();
 builder.Services.AddSingleton<ITransactionManagerConfig>(txManagerConfig);
 
 for (int i = 0; i < txManagerConfig.NumberOfShards; i++)
@@ -59,19 +61,20 @@ using IHost host = builder.Build();
 using IServiceScope serviceScope = host.Services.CreateScope();
 IServiceProvider provider = serviceScope.ServiceProvider;
 
-var SubredditService = provider.GetRequiredService<SubredditService>();
+var postService = provider.GetRequiredService<PostService>();
 
-var subreddit = new Subreddit{
-        Handle = "623423",
-        Title = "ff15",
-        About = "Hello this is hell",
-        Avatar = ByteString.CopyFrom("e#>&*m16", Encoding.Unicode),
-        CreatedAt = DateTimeOffset.UtcNow.ToTimestamp(),
+var post = new Post {
+    Id = Guid.NewGuid().ToString(),
+    Title = "zzzzzzzzfasdfaaaaaaaaaa",
+    Content = "fff",
+    OwnerHandle = "Ahmed",
+    SubredditHandle = "xfasdf",
+    IsPinned = true,
+    NumberOfVotes = -1,
 };
 
-subreddit.AdminsHandles.Add(new string[] { "Ahmed" });
 
-System.Console.WriteLine(await SubredditService.CreateSubredditAsync(subreddit));
+System.Console.WriteLine(await postService.CreatePostAsync(post));
  
 
 await host.RunAsync();

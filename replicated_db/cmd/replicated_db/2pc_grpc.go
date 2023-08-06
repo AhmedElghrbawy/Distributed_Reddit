@@ -13,6 +13,8 @@ func (rdb *rdbServer) Commit(ctx context.Context, twopc_info *pb.TwoPhaseCommitI
 		Executer: &CommitExecuter{Twopc_info: twopc_info},
 		Id:       twopc_info.TransactionId,
 	}
+	// this should be removed later
+	time.Sleep(500*time.Millisecond)
 
 	submited, replyInfo := rdb.submitOperationToRaft(op)
 
@@ -37,6 +39,8 @@ func (rdb *rdbServer) Rollback(ctx context.Context, twopc_info *pb.TwoPhaseCommi
 		Executer: &RollbackExecuter{Twopc_info: twopc_info},
 		Id:       twopc_info.TransactionId,
 	}
+	// this should be removed later
+	time.Sleep(500*time.Millisecond)
 
 	submited, replyInfo := rdb.submitOperationToRaft(op)
 

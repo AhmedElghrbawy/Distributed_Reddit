@@ -4,5 +4,5 @@ namespace RDB.TransactionManager;
 
 public interface ITransactionManager
 {
-    Task<List<IMessage>> SubmitTransactionsAsync(List<TransactionInfo> txs);
+    Task<IMessage[]> SubmitTransactionsAsync(TransactionInfo[] txs);
 }

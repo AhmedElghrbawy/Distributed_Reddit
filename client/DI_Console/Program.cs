@@ -65,7 +65,7 @@ var postService = provider.GetRequiredService<PostService>();
 
 var post = new Post {
     Id = Guid.NewGuid().ToString(),
-    Title = "roll back",
+    Title = "gg fasdf",
     Content = "fff",
     OwnerHandle = "Ahmed",
     SubredditHandle = "xfasdf",

@@ -31,23 +31,32 @@ public class TransactionManager : ITransactionManager
             _shardLeader[i] = 0;
         }
     }
-    public async Task<List<IMessage>> SubmitTransactionsAsync(List<TransactionInfo> txs)
+
+    /// <summary>
+    /// Runs The given array of transactions and returns an array of corresponding result.
+    /// If the input array contains more than one transaction, two phase commit is enabled. 
+    /// </summary>
+    /// <param name="txs"></param>
+    /// <returns>An array of corresponding result, or an empty array if an error occurs</returns>
+    public async Task<IMessage[]> SubmitTransactionsAsync(TransactionInfo[] txs)
     {       
+        int n = txs.Length;
+        var results = new IMessage[n]; 
+
         using var transactionCts = new CancellationTokenSource();
 
-        var results = new List<IMessage>();
-        if (txs.Count == 1)
+        if (n == 1)
         {
             transactionCts.CancelAfter(_transactionTimeoutPeriod);
             try
             {
-                results.Add(await RunTransactionAsync(txs[0], transactionCts.Token));
+                results[0] = await RunTransactionAsync(txs[0], transactionCts.Token);
                 return results;
             }
             catch(OperationCanceledException ex)
             {
                 System.Console.WriteLine(ex.Message);
-                return results;
+                return Array.Empty<IMessage>();
             }
         }      
 
@@ -56,16 +65,14 @@ public class TransactionManager : ITransactionManager
         // preparation phase
         // the server side is aware of transaction that should be prepared
         var preparedTransactionsTasks = txs.Select(tx => RunTransactionAsync(tx, transactionCts.Token));
-        IMessage[] preparedTxsResults = Array.Empty<IMessage>();
 
         transactionCts.CancelAfter(_transactionTimeoutPeriod);
         try
         {
-            preparedTxsResults = await Task.WhenAll(preparedTransactionsTasks);
+            results = await Task.WhenAll(preparedTransactionsTasks);
         }
         catch(OperationCanceledException ex)
         {
-            // should start a task in the background to abort these transactions
             System.Console.WriteLine("preparing tx error: " + ex.Message);
             
             foreach (var tx in txs)
@@ -75,7 +82,7 @@ public class TransactionManager : ITransactionManager
                 RollbackPreparedTransactionAsync(tx.TransactionId, tx.ShardNumber);
             }
         
-            return preparedTxsResults.ToList();
+            return Array.Empty<IMessage>();;
         }
         System.Console.WriteLine("prepareation phase done");
 
@@ -86,7 +93,7 @@ public class TransactionManager : ITransactionManager
         await Task.WhenAll(commitedTransactionsTasks);
         
         
-        return preparedTxsResults.ToList();
+        return results;
     }
 
     /// <summary>

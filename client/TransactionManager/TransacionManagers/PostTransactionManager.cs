@@ -19,7 +19,7 @@ public class PostTransactionManager
         _grpcClientFactory = grpcClientFactory;
     }
 
-    public async Task<Post> CreatePostAsync(Post post)
+    public async Task<Post?> CreatePostAsync(Post post)
     {
         var txId = Guid.NewGuid();
 
@@ -74,12 +74,12 @@ public class PostTransactionManager
             txInfos.Add(userPostTxInfo);
         }
 
-        var result = await _txManager.SubmitTransactionsAsync(txInfos);
+        var result = await _txManager.SubmitTransactionsAsync(txInfos.ToArray());
 
-        return (Post) result[0];
+        return result.Length == txInfos.Count ? (Post) result[0] : null;
     }
 
-    private static int GetPostShardNumber(Post post, int nShards)
+    internal static int GetPostShardNumber(Post post, int nShards)
     {
         // ! string.GetHashCode() is randomized in .NET core
         return post.Id.GetDeterministicHashCode().Mod(nShards);

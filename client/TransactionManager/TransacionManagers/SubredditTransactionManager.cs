@@ -21,7 +21,7 @@ public class SubredditTransactionManager
 
 
 
-    public async Task<Subreddit> CreateSubredditAsync(Subreddit subreddit)
+    public async Task<Subreddit?> CreateSubredditAsync(Subreddit subreddit)
     {
         int shardNumber = GetSubreddditShardNumber(subreddit, _config.NumberOfShards);
         var clients = new List<ClientBase>();
@@ -51,9 +51,9 @@ public class SubredditTransactionManager
 
         var txInfo = new TransactionInfo(Guid.NewGuid(), shardNumber, clients, execFunc, subredditInfo);
 
-        var result = await _txManager.SubmitTransactionsAsync(new List<TransactionInfo> {txInfo});
+        var result = await _txManager.SubmitTransactionsAsync(new TransactionInfo[] {txInfo});
 
-        return (Subreddit) result[0];
+        return result.Length == 1 ? (Subreddit) result[0] : null;
     }
 
     internal static int GetSubreddditShardNumber(Subreddit subreddit, int nShards)

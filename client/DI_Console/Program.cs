@@ -66,7 +66,7 @@ var subredditService = provider.GetRequiredService<SubredditService>();
 
 
 
-System.Console.WriteLine(await subredditService.GetSubredditAsync("gar"));
+System.Console.WriteLine(string.Join(", ", await subredditService.GetSubredditsHandlesAsync()));
  
 
 await host.RunAsync();

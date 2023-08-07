@@ -21,4 +21,9 @@ public class SubredditService
     {
         return await _txManager.GetSubredditAsync(handle);
     }
+
+    public async Task<IEnumerable<string>> GetSubredditsHandlesAsync()
+    {
+        return await _txManager.GetSubredditsHandlesAsync();
+    }
 }

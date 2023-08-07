@@ -61,20 +61,12 @@ using IHost host = builder.Build();
 using IServiceScope serviceScope = host.Services.CreateScope();
 IServiceProvider provider = serviceScope.ServiceProvider;
 
-var postService = provider.GetRequiredService<PostService>();
-
-var post = new Post {
-    Id = Guid.NewGuid().ToString(),
-    Title = "gg fasdf",
-    Content = "fff",
-    OwnerHandle = "Ahmed",
-    SubredditHandle = "xfasdf",
-    IsPinned = true,
-    NumberOfVotes = -1,
-};
+var subredditService = provider.GetRequiredService<SubredditService>();
 
 
-System.Console.WriteLine(await postService.CreatePostAsync(post));
+
+
+System.Console.WriteLine(await subredditService.GetSubredditAsync("gar"));
  
 
 await host.RunAsync();

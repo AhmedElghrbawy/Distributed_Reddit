@@ -12,8 +12,13 @@ public class SubredditService
         _txManager = subredditTxManager;
     }
 
-    public async Task<Subreddit> CreateSubredditAsync(Subreddit subreddit)
+    public async Task<Subreddit?> CreateSubredditAsync(Subreddit subreddit)
     {
         return await _txManager.CreateSubredditAsync(subreddit);
+    }
+
+    public async Task<Subreddit?> GetSubredditAsync(string handle)
+    {
+        return await _txManager.GetSubredditAsync(handle);
     }
 }

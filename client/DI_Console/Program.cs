@@ -73,7 +73,7 @@ var post = new Post
 };
 
 
-System.Console.WriteLine(await postService.UpVote(post));
+System.Console.WriteLine(string.Join(", ", await postService.GetPostsAsync()));
  
 
 await host.RunAsync();

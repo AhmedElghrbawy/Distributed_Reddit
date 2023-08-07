@@ -35,4 +35,9 @@ public class PostService
         post.NumberOfVotes--;
         return await _txManager.UpdatePostAsync(post, new PostUpdatedColumn[] {PostUpdatedColumn.NumberOfVotes});
     }
+
+    public async Task<IEnumerable<Post>> GetPostsAsync()
+    {
+        return await _txManager.GetPostsAsync();
+    }
 }

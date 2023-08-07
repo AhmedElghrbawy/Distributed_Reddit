@@ -178,6 +178,60 @@ public class PostTransactionManager
         return result.Length == 1 ? (Post) result[0] : null;
     }
 
+    public async Task<IEnumerable<Post>> GetPostsAsync()
+    {
+        var txs = new List<TransactionInfo>();
+
+        for (int i = 0; i < _config.NumberOfShards; i++)
+        {
+            var clients = new List<ClientBase>();
+            for (int j = 0; j < _config.NumberOfReplicas; j++)
+            {
+                clients.Add(_grpcClientFactory.CreateClient<PostGRPC.PostGRPCClient>(
+                    $"{nameof(PostGRPC.PostGRPCClient)}/S{i}_R{j}"
+                ));
+            }
+
+            var messageInfo = new MessageInfo
+            {
+                Id = Guid.NewGuid().ToString(),
+            };
+
+            static async Task<IMessage> execFunc(IMessage inputMessage, ClientBase client, CancellationToken cancellationToken)
+            {
+                var postClient = (PostGRPC.PostGRPCClient)client;
+                var inputPostInfo = (MessageInfo)inputMessage;
+
+                return (IMessage)await postClient.GetPostsAsync(inputPostInfo, cancellationToken: cancellationToken);
+            }
+
+            var txInfo = new TransactionInfo(Guid.NewGuid(), i, clients, execFunc, messageInfo);
+            txs.Add(txInfo);
+        }
+
+
+        var postsTasks = txs.Select(tx => _txManager.SubmitTransactionsAsync(new TransactionInfo[] {tx}));
+        
+        var txResults = await Task.WhenAll(postsTasks);
+
+        if (txResults.Length != txs.Count)
+            return Enumerable.Empty<Post>();
+
+        var result = new List<Post>();
+
+        foreach (var txResult in txResults)
+        {
+            var postList = (PostList)txResult[0];
+
+            foreach (var post in postList.Posts)
+            {
+                result.Add(post);
+            }
+        }
+
+        return result;
+    }
+
     internal static int GetPostShardNumber(Post post, int nShards)
     {
         // ! string.GetHashCode() is randomized in .NET core

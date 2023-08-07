@@ -21,4 +21,18 @@ public class PostService
     {
         return await _txManager.GetPostAsync(postId, subredditHandle, userHandle);
     }
+
+    public async Task<Post?> UpVote(Post post)
+    {
+        // not the best way to do that.
+        post.NumberOfVotes++;
+        return await _txManager.UpdatePostAsync(post, new PostUpdatedColumn[] {PostUpdatedColumn.NumberOfVotes});
+    }
+
+    public async Task<Post?> DownVote(Post post)
+    {
+        // not the best way to do that.
+        post.NumberOfVotes--;
+        return await _txManager.UpdatePostAsync(post, new PostUpdatedColumn[] {PostUpdatedColumn.NumberOfVotes});
+    }
 }

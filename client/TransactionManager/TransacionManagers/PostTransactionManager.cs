@@ -118,6 +118,66 @@ public class PostTransactionManager
         return result.Length == 1 ? (Post) result[0] : null;
     }
 
+
+    public async Task<Post?> UpdatePostAsync(Post post, IEnumerable<PostUpdatedColumn> updatedColumns)
+    {
+        var txId = Guid.NewGuid();
+
+        int subredditShard = SubredditTransactionManager.GetSubreddditShardNumber(new Subreddit{Handle = post.SubredditHandle}, _config.NumberOfShards);
+        int userShard = 0;
+
+        var subredditPostShardClients = new List<ClientBase>();
+        for (int i = 0; i < _config.NumberOfReplicas; i++)
+        {
+            subredditPostShardClients.Add(_grpcClientFactory.CreateClient<PostGRPC.PostGRPCClient>(
+                $"{nameof(PostGRPC.PostGRPCClient)}/S{subredditShard}_R{i}"
+            ));
+        }
+
+        var userPostShardClients = new List<ClientBase>();
+        for (int i = 0; i < _config.NumberOfReplicas; i++)
+        {
+            userPostShardClients.Add(_grpcClientFactory.CreateClient<PostGRPC.PostGRPCClient>(
+                $"{nameof(PostGRPC.PostGRPCClient)}/S{userShard}_R{i}"
+            ));
+        }
+
+        var postInfo = new PostInfo
+        {
+            Post = post,
+            MessageInfo = new MessageInfo
+            {
+                Id = Guid.NewGuid().ToString(),
+            },
+            SubredditShard = subredditShard,
+            UserShard = userShard, 
+            TwopcInfo = new TwoPhaseCommitInfo {TransactionId = txId.ToString(), TwopcEnabled = true }
+        };
+
+        postInfo.UpdatedColumns.AddRange(updatedColumns);
+
+        static async Task<IMessage> execFunc(IMessage inputMessage, ClientBase client, CancellationToken cancellationToken)
+        {
+            var postClient = (PostGRPC.PostGRPCClient)client;
+            var inputPostInfo = (PostInfo)inputMessage;
+
+            return (IMessage)await postClient.UpdatePostAsync(inputPostInfo, cancellationToken: cancellationToken);
+        }
+
+        var subredditPostTxInfo = new TransactionInfo(txId, subredditShard, subredditPostShardClients, execFunc, postInfo);
+        var userPostTxInfo = new TransactionInfo(txId, userShard, userPostShardClients, execFunc, postInfo);
+
+        // we should use 2pc when we update, but since we only support up/down vote for now, there is no need to 2pc. we can let number of votes be inconsistent
+
+        var txInfos = new List<TransactionInfo>(){subredditPostTxInfo, userPostTxInfo};
+        var txTasks = txInfos.Select(txInfo => _txManager.SubmitTransactionsAsync(new TransactionInfo[] {txInfo}));
+
+        var resultTask = await Task.WhenAny(txTasks);
+        var result = await resultTask;
+
+        return result.Length == 1 ? (Post) result[0] : null;
+    }
+
     internal static int GetPostShardNumber(Post post, int nShards)
     {
         // ! string.GetHashCode() is randomized in .NET core

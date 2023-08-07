@@ -63,10 +63,17 @@ IServiceProvider provider = serviceScope.ServiceProvider;
 
 var postService = provider.GetRequiredService<PostService>();
 
+var post = new Post
+{
+    Id = "32259893-d403-4754-9253-5884f82d2c14",
+    Title = "Hey we want to update this",
+    Content = "wtf",
+    OwnerHandle = "Ahmed",
+    SubredditHandle = "English",
+};
 
 
-
-System.Console.WriteLine(await postService.GetPostAsync(Guid.Parse("9c8c468c-f180-46f3-ad63-af5832e17d42"), "gar", "f"));
+System.Console.WriteLine(await postService.UpVote(post));
  
 
 await host.RunAsync();

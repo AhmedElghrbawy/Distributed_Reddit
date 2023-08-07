@@ -79,6 +79,45 @@ public class PostTransactionManager
         return result.Length == txInfos.Count ? (Post) result[0] : null;
     }
 
+
+    public async Task<Post?> GetPostAsync(Guid id, string subredditHandle, string ownerHandle)
+    {
+        int subredditShard = SubredditTransactionManager.GetSubreddditShardNumber(new Subreddit{Handle = subredditHandle}, _config.NumberOfShards);
+        
+        var subredditPostShardClients = new List<ClientBase>();
+        for (int i = 0; i < _config.NumberOfReplicas; i++)
+        {
+            subredditPostShardClients.Add(_grpcClientFactory.CreateClient<PostGRPC.PostGRPCClient>(
+                $"{nameof(PostGRPC.PostGRPCClient)}/S{subredditShard}_R{i}"
+            ));
+        }
+
+        var postInfo = new PostInfo
+        {
+            Post = new Post {Id = id.ToString()},
+            MessageInfo = new MessageInfo
+            {
+                Id = Guid.NewGuid().ToString(),
+            },
+            SubredditShard = subredditShard,
+            UserShard = 0, 
+        };
+
+        static async Task<IMessage> execFunc(IMessage inputMessage, ClientBase client, CancellationToken cancellationToken)
+        {
+            var postClient = (PostGRPC.PostGRPCClient)client;
+            var inputPostInfo = (PostInfo)inputMessage;
+
+            return (IMessage)await postClient.GetPostAsync(inputPostInfo, cancellationToken: cancellationToken);
+        }
+
+        var postTxInfo = new TransactionInfo(Guid.NewGuid(), subredditShard, subredditPostShardClients, execFunc, postInfo);
+
+        var result = await _txManager.SubmitTransactionsAsync(new TransactionInfo[] {postTxInfo});
+
+        return result.Length == 1 ? (Post) result[0] : null;
+    }
+
     internal static int GetPostShardNumber(Post post, int nShards)
     {
         // ! string.GetHashCode() is randomized in .NET core

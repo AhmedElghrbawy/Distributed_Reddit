@@ -12,8 +12,13 @@ public class PostService
         _txManager = txManager;
     }
 
-    public async Task<Post> CreatePostAsync(Post post)
+    public async Task<Post?> CreatePostAsync(Post post)
     {
         return await _txManager.CreatePostAsync(post);
+    }
+
+    public async Task<Post?> GetPostAsync(Guid postId, string subredditHandle, string userHandle)
+    {
+        return await _txManager.GetPostAsync(postId, subredditHandle, userHandle);
     }
 }

@@ -61,12 +61,12 @@ using IHost host = builder.Build();
 using IServiceScope serviceScope = host.Services.CreateScope();
 IServiceProvider provider = serviceScope.ServiceProvider;
 
-var subredditService = provider.GetRequiredService<SubredditService>();
+var postService = provider.GetRequiredService<PostService>();
 
 
 
 
-System.Console.WriteLine(string.Join(", ", await subredditService.GetSubredditsHandlesAsync()));
+System.Console.WriteLine(await postService.GetPostAsync(Guid.Parse("9c8c468c-f180-46f3-ad63-af5832e17d42"), "gar", "f"));
  
 
 await host.RunAsync();

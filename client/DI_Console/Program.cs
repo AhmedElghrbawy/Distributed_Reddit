@@ -23,8 +23,10 @@ HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddSingleton<ITransactionManager, TransactionManager>();
 builder.Services.AddTransient<SubredditService>();
 builder.Services.AddTransient<PostService>();
+builder.Services.AddTransient<UserService>();
 builder.Services.AddTransient<SubredditTransactionManager>();
 builder.Services.AddTransient<PostTransactionManager>();
+builder.Services.AddTransient<UserTransactionManager>();
 builder.Services.AddSingleton<ITransactionManagerConfig>(txManagerConfig);
 
 for (int i = 0; i < txManagerConfig.NumberOfShards; i++)
@@ -61,19 +63,15 @@ using IHost host = builder.Build();
 using IServiceScope serviceScope = host.Services.CreateScope();
 IServiceProvider provider = serviceScope.ServiceProvider;
 
-var postService = provider.GetRequiredService<PostService>();
+var postService = provider.GetRequiredService<UserService>();
 
-var post = new Post
+var user = new User
 {
-    Id = "32259893-d403-4754-9253-5884f82d2c14",
-    Title = "Hey we want to update this",
-    Content = "wtf",
-    OwnerHandle = "Ahmed",
-    SubredditHandle = "English",
+    Handle = "gar",
+    DisplayName = "Heloo",
 };
 
-
-System.Console.WriteLine(string.Join(", ", await postService.GetPostsAsync()));
+System.Console.WriteLine(await postService.CreateUserAsync(user));
  
 
 await host.RunAsync();

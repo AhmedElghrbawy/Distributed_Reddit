@@ -24,7 +24,7 @@ public class PostTransactionManager
         var txId = Guid.NewGuid();
 
         int subredditShard = SubredditTransactionManager.GetSubreddditShardNumber(new Subreddit{Handle = post.SubredditHandle}, _config.NumberOfShards);
-        int userShard = 0; // TODO
+        int userShard = UserTransactionManager.GetUserShardNumber(new User{Handle = post.OwnerHandle}, _config.NumberOfShards);
 
         var subredditPostShardClients = new List<ClientBase>();
         for (int i = 0; i < _config.NumberOfReplicas; i++)
@@ -124,7 +124,7 @@ public class PostTransactionManager
         var txId = Guid.NewGuid();
 
         int subredditShard = SubredditTransactionManager.GetSubreddditShardNumber(new Subreddit{Handle = post.SubredditHandle}, _config.NumberOfShards);
-        int userShard = 0;
+        int userShard = UserTransactionManager.GetUserShardNumber(new User{Handle = post.OwnerHandle}, _config.NumberOfShards);
 
         var subredditPostShardClients = new List<ClientBase>();
         for (int i = 0; i < _config.NumberOfReplicas; i++)

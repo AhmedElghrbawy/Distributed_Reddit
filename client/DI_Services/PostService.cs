@@ -1,7 +1,7 @@
 ﻿using RDB.TransactionManager;
 using rdb_grpc;
 
-namespace DI.Services;
+namespace DistributedReddit.Services;
 
 public class PostService
 {

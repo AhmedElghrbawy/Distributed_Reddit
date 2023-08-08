@@ -5,7 +5,7 @@ VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RDB.TransactionManager", "TransactionManager\RDB.TransactionManager.csproj", "{6D5EDEB0-49F2-4EC1-BC8E-C91E327E8EB9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DI.Services", "DI_Services\DI.Services.csproj", "{E4745FF2-E426-408A-BB14-0F99677E93CF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DistributedReddit.Services", "DI_Services\DistributedReddit.Services.csproj", "{E4745FF2-E426-408A-BB14-0F99677E93CF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DI.Console", "DI_Console\DI.Console.csproj", "{8947B637-9E3B-41C2-95DA-496F37A19367}"
 EndProject

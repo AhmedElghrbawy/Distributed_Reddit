@@ -7,7 +7,7 @@ using rdb_grpc;
 using Google.Protobuf;
 using System.Text;
 using Google.Protobuf.WellKnownTypes;
-using DI.Services;
+using DistributedReddit.Services;
 
 var configuration = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())

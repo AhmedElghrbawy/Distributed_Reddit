@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="../DI_Services/DI.Services.csproj" />
+    <ProjectReference Include="../DI_Services/DistributedReddit.Services.csproj" />
     <ProjectReference Include="../TransactionManager/RDB.TransactionManager.csproj" />
   </ItemGroup>
 

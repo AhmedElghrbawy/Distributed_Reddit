@@ -30,16 +30,8 @@ namespace DistributedReddit.AuthDb.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("integer");
 
-                    b.Property<byte[]>("Avatar")
-                        .IsRequired()
-                        .HasColumnType("bytea");
-
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .HasColumnType("text");
-
-                    b.Property<string>("DisplayName")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Email")

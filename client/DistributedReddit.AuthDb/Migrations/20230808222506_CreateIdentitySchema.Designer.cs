@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DistributedReddit.AuthDb.Migrations
 {
     [DbContext(typeof(AuthDbContext))]
-    [Migration("20230808205210_CreateIdentitySchema")]
+    [Migration("20230808222506_CreateIdentitySchema")]
     partial class CreateIdentitySchema
     {
         /// <inheritdoc />
@@ -33,16 +33,8 @@ namespace DistributedReddit.AuthDb.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("integer");
 
-                    b.Property<byte[]>("Avatar")
-                        .IsRequired()
-                        .HasColumnType("bytea");
-
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .HasColumnType("text");
-
-                    b.Property<string>("DisplayName")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Email")

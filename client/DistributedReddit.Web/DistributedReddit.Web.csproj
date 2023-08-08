@@ -1,5 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
+  <ItemGroup>
+    <ProjectReference Include="..\DistributedReddit.Services\DistributedReddit.Services.csproj" />
+    <ProjectReference Include="..\TransactionManager\RDB.TransactionManager.csproj" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
     <Nullable>enable</Nullable>

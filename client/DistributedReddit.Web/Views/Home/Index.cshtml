@@ -3,6 +3,12 @@
 }
 
 <div class="text-center">
+
+    @foreach (var post in (IEnumerable<rdb_grpc.Post>)ViewData["posts"])
+    {
+        <h1>@post.Title</h1>   
+    }
+
     <h1 class="display-4">Welcome</h1>
     <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
 </div>

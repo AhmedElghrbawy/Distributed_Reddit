@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RDB.TransactionManager", "T
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DistributedReddit.Services", "DI_Services\DistributedReddit.Services.csproj", "{E4745FF2-E426-408A-BB14-0F99677E93CF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DI.Console", "DI_Console\DI.Console.csproj", "{8947B637-9E3B-41C2-95DA-496F37A19367}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,10 +21,6 @@ Global
 		{E4745FF2-E426-408A-BB14-0F99677E93CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E4745FF2-E426-408A-BB14-0F99677E93CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E4745FF2-E426-408A-BB14-0F99677E93CF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8947B637-9E3B-41C2-95DA-496F37A19367}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8947B637-9E3B-41C2-95DA-496F37A19367}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8947B637-9E3B-41C2-95DA-496F37A19367}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8947B637-9E3B-41C2-95DA-496F37A19367}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

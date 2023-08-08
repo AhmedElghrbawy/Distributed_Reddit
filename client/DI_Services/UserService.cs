@@ -21,4 +21,25 @@ public class UserService
     {
         return await _txManager.GetUserAsync(handle);
     }
+
+    public async Task<User?> ChangeDisplayNameAsync(string userHandle, string displayName)
+    {
+        return await _txManager.UpdateUserAsync(new User {Handle = userHandle, DisplayName = displayName},
+        new UserUpdatedColumn[] {UserUpdatedColumn.DisplayName});
+    }
+
+    public async Task<User?> IncreaseKarmaAsync(User user)
+    {
+        // not the best way to do this.
+        user.Karma++;
+        return await _txManager.UpdateUserAsync(user, new UserUpdatedColumn[] {UserUpdatedColumn.Karma});
+    }
+
+    
+    public async Task<User?> DecreaseKarmaAsync(User user)
+    {
+        // not the best way to do this.
+        user.Karma--;
+        return await _txManager.UpdateUserAsync(user, new UserUpdatedColumn[] {UserUpdatedColumn.Karma});
+    }
 }

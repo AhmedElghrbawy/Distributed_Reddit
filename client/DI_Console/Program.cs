@@ -71,7 +71,8 @@ var user = new User
     DisplayName = "Heloo",
 };
 
-System.Console.WriteLine(await postService.IncreaseKarmaAsync(user));
+await postService.UnFollowAsync("Kappa", "gar");
+// System.Console.WriteLine(await postService.FollowAsync("gar", "kappa"));
  
 
 await host.RunAsync();

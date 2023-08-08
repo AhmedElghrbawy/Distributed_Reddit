@@ -42,4 +42,14 @@ public class UserService
         user.Karma--;
         return await _txManager.UpdateUserAsync(user, new UserUpdatedColumn[] {UserUpdatedColumn.Karma});
     }
+
+    public async Task FollowAsync(string from_handle, string to_handle)
+    {
+        await _txManager.FollowAsync(from_handle, to_handle);
+    }
+
+    public async Task UnFollowAsync(string from_handle, string to_handle)
+    {
+        await _txManager.UnFollowAsync(from_handle, to_handle);
+    }
 }

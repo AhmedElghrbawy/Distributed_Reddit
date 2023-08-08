@@ -71,7 +71,7 @@ var user = new User
     DisplayName = "Heloo",
 };
 
-System.Console.WriteLine(await postService.CreateUserAsync(user));
+System.Console.WriteLine(await postService.GetUserAsync("Kappa"));
  
 
 await host.RunAsync();

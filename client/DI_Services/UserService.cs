@@ -17,4 +17,8 @@ public class UserService
         return await _txManager.CreateUserAsync(user);
     } 
 
+    public async Task<User?> GetUserAsync(string handle)
+    {
+        return await _txManager.GetUserAsync(handle);
+    }
 }

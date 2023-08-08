@@ -30,8 +30,8 @@ public class UserService
 
     public async Task<User?> IncreaseKarmaAsync(User user)
     {
-        // not the best way to do this.
-        user.Karma++;
+        userShard = 
+        user.Karma = 1;
         return await _txManager.UpdateUserAsync(user, new UserUpdatedColumn[] {UserUpdatedColumn.Karma});
     }
 
@@ -39,7 +39,7 @@ public class UserService
     public async Task<User?> DecreaseKarmaAsync(User user)
     {
         // not the best way to do this.
-        user.Karma--;
+        user.Karma = -1;
         return await _txManager.UpdateUserAsync(user, new UserUpdatedColumn[] {UserUpdatedColumn.Karma});
     }
 

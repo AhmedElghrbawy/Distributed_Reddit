@@ -25,14 +25,14 @@ public class PostService
     public async Task<Post?> UpVote(Post post)
     {
         // not the best way to do that.
-        post.NumberOfVotes++;
+        post.NumberOfVotes = 1;
         return await _txManager.UpdatePostAsync(post, new PostUpdatedColumn[] {PostUpdatedColumn.NumberOfVotes});
     }
 
     public async Task<Post?> DownVote(Post post)
     {
         // not the best way to do that.
-        post.NumberOfVotes--;
+        post.NumberOfVotes = -1;
         return await _txManager.UpdatePostAsync(post, new PostUpdatedColumn[] {PostUpdatedColumn.NumberOfVotes});
     }
 

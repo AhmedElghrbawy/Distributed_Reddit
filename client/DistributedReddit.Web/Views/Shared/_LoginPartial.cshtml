@@ -1,7 +1,8 @@
 @using Microsoft.AspNetCore.Identity
+@using DistributedReddit.AuthDb
 
-@inject SignInManager<IdentityUser> SignInManager
-@inject UserManager<IdentityUser> UserManager
+@inject SignInManager<AuthUser> SignInManager
+@inject UserManager<AuthUser> UserManager
 
 <ul class="navbar-nav">
 @if (SignInManager.IsSignedIn(User))

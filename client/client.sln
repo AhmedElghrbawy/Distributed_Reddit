@@ -5,7 +5,9 @@ VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RDB.TransactionManager", "TransactionManager\RDB.TransactionManager.csproj", "{6D5EDEB0-49F2-4EC1-BC8E-C91E327E8EB9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DistributedReddit.Services", "DI_Services\DistributedReddit.Services.csproj", "{E4745FF2-E426-408A-BB14-0F99677E93CF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DistributedReddit.Services", "DistributedReddit.Services\DistributedReddit.Services.csproj", "{E4745FF2-E426-408A-BB14-0F99677E93CF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DistributedReddit.Web", "DistributedReddit.Web\DistributedReddit.Web.csproj", "{ABB7FB04-6284-488B-9927-C071566514DA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{E4745FF2-E426-408A-BB14-0F99677E93CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E4745FF2-E426-408A-BB14-0F99677E93CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E4745FF2-E426-408A-BB14-0F99677E93CF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABB7FB04-6284-488B-9927-C071566514DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABB7FB04-6284-488B-9927-C071566514DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABB7FB04-6284-488B-9927-C071566514DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABB7FB04-6284-488B-9927-C071566514DA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

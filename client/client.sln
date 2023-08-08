@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DistributedReddit.Services"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DistributedReddit.Web", "DistributedReddit.Web\DistributedReddit.Web.csproj", "{ABB7FB04-6284-488B-9927-C071566514DA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DistributedReddit.AuthDb", "DistributedReddit.AuthDb\DistributedReddit.AuthDb.csproj", "{F2264401-8DA9-43B7-8D26-3AC6DE18300B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{ABB7FB04-6284-488B-9927-C071566514DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ABB7FB04-6284-488B-9927-C071566514DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ABB7FB04-6284-488B-9927-C071566514DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F2264401-8DA9-43B7-8D26-3AC6DE18300B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F2264401-8DA9-43B7-8D26-3AC6DE18300B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F2264401-8DA9-43B7-8D26-3AC6DE18300B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F2264401-8DA9-43B7-8D26-3AC6DE18300B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

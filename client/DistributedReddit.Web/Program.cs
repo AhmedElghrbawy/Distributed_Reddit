@@ -1,5 +1,7 @@
 using System.Text.Json;
+using DistributedReddit.AuthDb;
 using DistributedReddit.Services;
+using Microsoft.EntityFrameworkCore;
 using RDB.TransactionManager;
 using rdb_grpc;
 
@@ -7,6 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 string txManagerConfPath = builder.Configuration.GetRequiredSection("tx_manager_config_file_path").Get<string>()!;
 var txManagerConfig = JsonSerializer.Deserialize<TransactionManagerConfig>(File.ReadAllText(txManagerConfPath))!;
+
+var authDbConnectionString = builder.Configuration["DistributedReddit:authDbConnectionStr"];
 
 
 // Add services to the container.
@@ -51,6 +55,14 @@ for (int i = 0; i < txManagerConfig.NumberOfShards; i++)
         });
     }
 }
+
+
+builder.Services.AddDbContext<AuthDbContext>(options => 
+{
+    options.UseNpgsql(authDbConnectionString);
+});
+
+builder.Services.AddDefaultIdentity<AuthUser>(options => options.SignIn.RequireConfirmedAccount = false).AddEntityFrameworkStores<AuthDbContext>();
 
 var app = builder.Build();
 

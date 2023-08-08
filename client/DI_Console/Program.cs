@@ -24,9 +24,11 @@ builder.Services.AddSingleton<ITransactionManager, TransactionManager>();
 builder.Services.AddTransient<SubredditService>();
 builder.Services.AddTransient<PostService>();
 builder.Services.AddTransient<UserService>();
+builder.Services.AddTransient<CommentService>();
 builder.Services.AddTransient<SubredditTransactionManager>();
 builder.Services.AddTransient<PostTransactionManager>();
 builder.Services.AddTransient<UserTransactionManager>();
+builder.Services.AddTransient<CommentTransactionManager>();
 builder.Services.AddSingleton<ITransactionManagerConfig>(txManagerConfig);
 
 for (int i = 0; i < txManagerConfig.NumberOfShards; i++)
@@ -63,15 +65,17 @@ using IHost host = builder.Build();
 using IServiceScope serviceScope = host.Services.CreateScope();
 IServiceProvider provider = serviceScope.ServiceProvider;
 
-var postService = provider.GetRequiredService<UserService>();
+var postService = provider.GetRequiredService<CommentService>();
 
-var user = new User
+var comment = new Comment
 {
-    Handle = "gar",
-    DisplayName = "Heloo",
+    Id = Guid.NewGuid().ToString(),
+    Content = "tx comment",
+    OwnerHandle = "Kappa",
+    PostId = "9c8c468c-f180-46f3-ad63-af5832e17d41",
 };
 
-await postService.LeaveSubredditAsync("Kappa", "gar");
+await postService.CreateCommentAsync(comment, "gar");
 // System.Console.WriteLine(await postService.FollowAsync("gar", "kappa"));
  
 

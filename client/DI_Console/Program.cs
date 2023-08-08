@@ -71,7 +71,7 @@ var user = new User
     DisplayName = "Heloo",
 };
 
-await postService.UnFollowAsync("Kappa", "gar");
+await postService.LeaveSubredditAsync("Kappa", "gar");
 // System.Console.WriteLine(await postService.FollowAsync("gar", "kappa"));
  
 

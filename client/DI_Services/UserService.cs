@@ -52,4 +52,14 @@ public class UserService
     {
         await _txManager.UnFollowAsync(from_handle, to_handle);
     }
+
+    public async Task JoinSubredditAsync(string userHandle, string subreddit_handle)
+    {
+        await _txManager.JoinSubredditAsync(userHandle, subreddit_handle);
+    }
+
+    public async Task LeaveSubredditAsync(string userHandle, string subreddit_handle)
+    {
+        await _txManager.LeaveSubredditAsync(userHandle, subreddit_handle);
+    }
 }

@@ -191,7 +191,7 @@ public class UserTransactionManager
                 TransactionId = txId.ToString(),
             }
         };
-        
+
         var fromTxInfo = new TransactionInfo(txId, fromShardNumber, fromClients, execFunc, followageInfo);
         var toTxInfo = new TransactionInfo(txId, toShardNumber, toClients, execFunc, followageInfo);
 
@@ -200,6 +200,83 @@ public class UserTransactionManager
         if (fromShardNumber != toShardNumber)
         {
             txs.Add(toTxInfo);
+        }
+        await _txManager.SubmitTransactionsAsync(txs.ToArray());
+    }
+
+    public async Task JoinSubredditAsync(string userHandle, string subredditHandle)
+    {
+        static async Task<IMessage> execFunc(IMessage inputMessage, ClientBase client, CancellationToken cancellationToken)
+        {
+            var userClient = (UserGRPC.UserGRPCClient)client;
+            var followageInfo = (UserSubredditMembership)inputMessage;
+
+            return (IMessage)await userClient.JoinSubredditAsync(followageInfo, cancellationToken: cancellationToken);
+        }
+
+        await UpdateUserSubredditMemberShip(userHandle, subredditHandle, execFunc);
+    }
+
+    public async Task LeaveSubredditAsync(string userHandle, string subredditHandle)
+    {
+        static async Task<IMessage> execFunc(IMessage inputMessage, ClientBase client, CancellationToken cancellationToken)
+        {
+            var userClient = (UserGRPC.UserGRPCClient)client;
+            var followageInfo = (UserSubredditMembership)inputMessage;
+
+            return (IMessage)await userClient.LeaveSubredditAsync(followageInfo, cancellationToken: cancellationToken);
+        }
+
+        await UpdateUserSubredditMemberShip(userHandle, subredditHandle, execFunc);
+    }
+
+    private async Task UpdateUserSubredditMemberShip(string userHandle, string subredditHandle, Func<IMessage, ClientBase, CancellationToken, Task<IMessage>> execFunc)
+    {
+        var txId = Guid.NewGuid();
+        int userShardNumber = GetUserShardNumber(new User{Handle = userHandle}, _config.NumberOfShards);
+        int subredditShardNumber = SubredditTransactionManager.GetSubreddditShardNumber(new Subreddit{Handle = subredditHandle}, _config.NumberOfShards);
+
+        var userClients = new List<ClientBase>();
+        for (int i = 0; i < _config.NumberOfReplicas; i++)
+        {
+            userClients.Add(_grpcClientFactory.CreateClient<UserGRPC.UserGRPCClient>(
+                $"{nameof(UserGRPC.UserGRPCClient)}/S{userShardNumber}_R{i}"
+            ));
+        }
+
+        var subredditClients = new List<ClientBase>();
+        for (int i = 0; i < _config.NumberOfReplicas; i++)
+        {
+            subredditClients.Add(_grpcClientFactory.CreateClient<UserGRPC.UserGRPCClient>(
+                $"{nameof(UserGRPC.UserGRPCClient)}/S{subredditShardNumber}_R{i}"
+            ));
+        }
+
+        var userSubredditMembership = new UserSubredditMembership
+        {
+            UserHandle = userHandle,
+            SubredditHandle = subredditHandle,
+            UserShard = userShardNumber,
+            SubredditShard = subredditShardNumber,
+
+            MessageInfo = new MessageInfo
+            {
+                Id = Guid.NewGuid().ToString()
+            },
+            TwopcInfo = new TwoPhaseCommitInfo
+            {
+                TransactionId = txId.ToString()
+            }
+        };
+
+        var userTxInfo = new TransactionInfo(txId, userShardNumber, userClients, execFunc, userSubredditMembership);
+        var subredditTxInfo = new TransactionInfo(txId, subredditShardNumber, subredditClients, execFunc, userSubredditMembership);
+
+        var txs = new List<TransactionInfo> {userTxInfo};
+
+        if (userShardNumber != subredditShardNumber)
+        {
+            txs.Add(subredditTxInfo);
         }
         await _txManager.SubmitTransactionsAsync(txs.ToArray());
     }

@@ -11,6 +11,8 @@ using System.Text.Encodings.Web;
 using System.Threading;
 using System.Threading.Tasks;
 using DistributedReddit.AuthDb;
+using DistributedReddit.Services;
+using Google.Protobuf;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -19,6 +21,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using rdb_grpc;
 
 namespace DistributedReddit.Web.Areas.Identity.Pages.Account
 {
@@ -30,13 +33,15 @@ namespace DistributedReddit.Web.Areas.Identity.Pages.Account
         private readonly IUserEmailStore<AuthUser> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
+        private readonly UserService _userService;
 
         public RegisterModel(
             UserManager<AuthUser> userManager,
             IUserStore<AuthUser> userStore,
             SignInManager<AuthUser> signInManager,
             ILogger<RegisterModel> logger,
-            IEmailSender emailSender)
+            IEmailSender emailSender,
+            UserService userService)
         {
             _userManager = userManager;
             _userStore = userStore;
@@ -44,6 +49,7 @@ namespace DistributedReddit.Web.Areas.Identity.Pages.Account
             _signInManager = signInManager;
             _logger = logger;
             _emailSender = emailSender;
+            _userService = userService;
         }
 
         /// <summary>
@@ -71,29 +77,26 @@ namespace DistributedReddit.Web.Areas.Identity.Pages.Account
         /// </summary>
         public class InputModel
         {
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
+            [Required]
+            [Display(Name = "Handle")]
+            public string Handle { get; set; }
+
+            [Required]
+            [Display(Name = "Display name")]
+            public string DisplayName { get; set; }
+
+
             [Required]
             [EmailAddress]
             [Display(Name = "Email")]
             public string Email { get; set; }
 
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
             [Required]
             [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
             [DataType(DataType.Password)]
             [Display(Name = "Password")]
             public string Password { get; set; }
 
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
             [DataType(DataType.Password)]
             [Display(Name = "Confirm password")]
             [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
@@ -113,27 +116,40 @@ namespace DistributedReddit.Web.Areas.Identity.Pages.Account
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
             if (ModelState.IsValid)
             {
-                var user = CreateUser();
+                var authUser = new AuthUser
+                {
+                    Handle = Input.Handle,
+                    Email = Input.Email,
+                };
 
-                await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
-                await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
-                var result = await _userManager.CreateAsync(user, Input.Password);
+                var replicatedUser = new User
+                {
+                    Handle = Input.Handle,
+                    DisplayName = Input.DisplayName,
+                    Avatar = ByteString.CopyFrom("asdf", Encoding.UTF8),
+                };
+
+
+                await _userStore.SetUserNameAsync(authUser, Input.Email, CancellationToken.None);
+                await _emailStore.SetEmailAsync(authUser, Input.Email, CancellationToken.None);
+                var result = await _userManager.CreateAsync(authUser, Input.Password);
 
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User created a new account with password.");
+                    await _userService.CreateUserAsync(replicatedUser);
 
-                    var userId = await _userManager.GetUserIdAsync(user);
-                    var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                    code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                    var callbackUrl = Url.Page(
-                        "/Account/ConfirmEmail",
-                        pageHandler: null,
-                        values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
-                        protocol: Request.Scheme);
+                    var userId = await _userManager.GetUserIdAsync(authUser);
+                    // var code = await _userManager.GenerateEmailConfirmationTokenAsync(authUser);
+                    // code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+                    // var callbackUrl = Url.Page(
+                    //     "/Account/ConfirmEmail",
+                    //     pageHandler: null,
+                    //     values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
+                    //     protocol: Request.Scheme);
 
-                    await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
-                        $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                    // await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
+                    //     $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
                     if (_userManager.Options.SignIn.RequireConfirmedAccount)
                     {
@@ -141,7 +157,7 @@ namespace DistributedReddit.Web.Areas.Identity.Pages.Account
                     }
                     else
                     {
-                        await _signInManager.SignInAsync(user, isPersistent: false);
+                        await _signInManager.SignInAsync(authUser, isPersistent: false);
                         return LocalRedirect(returnUrl);
                     }
                 }
@@ -153,20 +169,6 @@ namespace DistributedReddit.Web.Areas.Identity.Pages.Account
 
             // If we got this far, something failed, redisplay form
             return Page();
-        }
-
-        private AuthUser CreateUser()
-        {
-            try
-            {
-                return Activator.CreateInstance<AuthUser>();
-            }
-            catch
-            {
-                throw new InvalidOperationException($"Can't create an instance of '{nameof(AuthUser)}'. " +
-                    $"Ensure that '{nameof(AuthUser)}' is not an abstract class and has a parameterless constructor, or alternatively " +
-                    $"override the register page in /Areas/Identity/Pages/Account/Register.cshtml");
-            }
         }
 
         private IUserEmailStore<AuthUser> GetEmailStore()

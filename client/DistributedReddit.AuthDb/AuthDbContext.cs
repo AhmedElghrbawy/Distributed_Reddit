@@ -10,4 +10,12 @@ public class AuthDbContext : IdentityDbContext<AuthUser>
     {
 
     }
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+        builder.Entity<AuthUser>()
+            .HasIndex(u => u.Handle)
+            .IsUnique();
+    }
 }

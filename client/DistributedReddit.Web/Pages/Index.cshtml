@@ -1,10 +1,12 @@
-﻿@{
+﻿@page
+@model IndexModel
+@{
     ViewData["Title"] = "Home Page";
 }
 
 <div class="text-center">
 
-    @foreach (var post in (IEnumerable<rdb_grpc.Post>)ViewData["posts"])
+    @foreach (var post in Model.Posts)
     {
         <h1>@post.Title</h1>   
     }

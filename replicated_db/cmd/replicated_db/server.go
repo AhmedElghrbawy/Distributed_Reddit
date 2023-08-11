@@ -195,7 +195,8 @@ func (rdb *rdbServer) submitOperationToRaft(op Op) (bool, *replyInfo) {
 	if err != nil {
 		log.Fatal("encode error:", err)
 	}
-
+	// this should be removed later
+	time.Sleep(500 * time.Millisecond)
 	_, _, isLeader := rdb.rf.Start(encodedOp.Bytes())
 
 	if !isLeader {

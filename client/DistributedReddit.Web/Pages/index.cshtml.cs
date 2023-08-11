@@ -1,4 +1,6 @@
+using DistributedReddit.AuthDb;
 using DistributedReddit.Services;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using rdb_grpc;
@@ -9,17 +11,29 @@ public class IndexModel : PageModel
 {
     private readonly ILogger<IndexModel> _logger;
     private readonly PostService _postService;
+    private readonly UserManager<AuthUser> _userManager;
+    private readonly UserService _userService;
 
-    public IndexModel(ILogger<IndexModel> logger, PostService postService)
+    public IndexModel(ILogger<IndexModel> logger,
+        PostService postService,
+        UserManager<AuthUser> userManager,
+        UserService userService )
     {
         _logger = logger;
         _postService = postService;
+        _userManager = userManager;
+        _userService = userService;
     }
 
     public IEnumerable<Post> Posts { get; set; }
+    public User RDBUser { get; set; }
 
     public async Task OnGetAsync()
     {
+        var authUser = await _userManager.GetUserAsync(User);
+        RDBUser = await _userService.GetUserAsync(authUser.Handle);
+
+
         Posts = await _postService.GetPostsAsync();
     }
 }

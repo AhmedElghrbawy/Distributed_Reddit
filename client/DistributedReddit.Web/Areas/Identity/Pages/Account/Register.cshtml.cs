@@ -52,29 +52,13 @@ namespace DistributedReddit.Web.Areas.Identity.Pages.Account
             _userService = userService;
         }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [BindProperty]
         public InputModel Input { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public string ReturnUrl { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public IList<AuthenticationScheme> ExternalLogins { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public class InputModel
         {
             [Required]
@@ -85,6 +69,9 @@ namespace DistributedReddit.Web.Areas.Identity.Pages.Account
             [Display(Name = "Display name")]
             public string DisplayName { get; set; }
 
+            [Required]
+            [Display(Name = "Avatar")]
+            public IFormFile Avatar { get; set; }
 
             [Required]
             [EmailAddress]
@@ -122,11 +109,15 @@ namespace DistributedReddit.Web.Areas.Identity.Pages.Account
                     Email = Input.Email,
                 };
 
+                using var ms = new MemoryStream();
+                Input.Avatar.CopyTo(ms);
+                var AvatarBytes = ms.ToArray();
+
                 var replicatedUser = new User
                 {
                     Handle = Input.Handle,
                     DisplayName = Input.DisplayName,
-                    Avatar = ByteString.CopyFrom("asdf", Encoding.UTF8),
+                    Avatar = ByteString.CopyFrom(AvatarBytes),
                 };
 
 

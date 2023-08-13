@@ -1,0 +1,50 @@
+@page
+@model DistributedReddit.Web.Pages.Subreddits.CreateModel
+
+@{
+    ViewData["Title"] = "Create A Subreddit";
+}
+
+<h1>Create Subreddit</h1>
+
+
+<div class="row">
+    <div class="col-md-4">
+        <form method="post" enctype="multipart/form-data">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group mb-3">
+                <label asp-for="Subreddit.Handle" class="control-label"></label>
+                <input asp-for="Subreddit.Handle" class="form-control" />
+                <span asp-validation-for="Subreddit.Handle" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="Subreddit.Title" class="control-label"></label>
+                <input asp-for="Subreddit.Title" class="form-control" />
+                <span asp-validation-for="Subreddit.Title" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="AvatarFile" class="control-label"></label>
+                <input asp-for="AvatarFile" class="form-control" />
+                <span asp-validation-for="AvatarFile" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="Subreddit.About" class="control-label"></label>
+                <textarea  asp-for="Subreddit.About" class="form-control" rows="4"></textarea>
+                <span asp-validation-for="Subreddit.About" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="Subreddit.Rules" class="control-label"></label>
+                <textarea  asp-for="Subreddit.Rules" class="form-control" rows="4"></textarea>
+                <span asp-validation-for="Subreddit.Rules" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

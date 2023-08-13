@@ -27,12 +27,9 @@ public class IndexModel : PageModel
     }
 
     public IEnumerable<Post> Posts { get; set; }
-    public User RDBUser { get; set; }
 
     public async Task OnGetAsync()
     {
-        var authUser = await _userManager.GetUserAsync(User);
-        // RDBUser = await _userService.GetUserAsync(authUser.Handle);
 
 
         Posts = new List<Post>()

@@ -1,12 +1,13 @@
 using DistributedReddit.AuthDb;
 using DistributedReddit.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using rdb_grpc;
 
 namespace DistributedReddit.Web.Pages;
-
+[Authorize]
 public class IndexModel : PageModel
 {
     private readonly ILogger<IndexModel> _logger;
@@ -31,9 +32,35 @@ public class IndexModel : PageModel
     public async Task OnGetAsync()
     {
         var authUser = await _userManager.GetUserAsync(User);
-        RDBUser = await _userService.GetUserAsync(authUser.Handle);
+        // RDBUser = await _userService.GetUserAsync(authUser.Handle);
 
 
-        Posts = await _postService.GetPostsAsync();
+        Posts = new List<Post>()
+        {
+            new Post {Title = "Hello"},
+            new Post {Title = "Goodbye"},
+            new Post {Title = "Yolooo"},
+            new Post {Title = "Sayed"},
+            new Post {Title = "Kappa"},
+            new Post {Title = "Kappa"},
+            new Post {Title = "Kappa"},
+            new Post {Title = "Kappa"},
+            new Post {Title = "Kappa"},
+            new Post {Title = "Kappa"},
+            new Post {Title = "Kappa"},
+            new Post {Title = "Kappa"},
+            new Post {Title = "Kappa"},
+            new Post {Title = "Kappa"},
+            new Post {Title = "Kappa"},
+            new Post {Title = "Kappa"},
+            new Post {Title = "Kappa"},
+            new Post {Title = "Kappa"},
+            new Post {Title = "Kappa"},
+            new Post {Title = "Kappa"},
+            new Post {Title = "Kappa"},
+            new Post {Title = "Kappa"},
+            new Post {Title = "Kappa"},
+            new Post {Title = "Kappa"},
+        };
     }
 }

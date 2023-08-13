@@ -1,16 +1,14 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Reddit - Fly above everything";
+    ViewData["Nav-collabse"] = "Home";
+    ViewData["Nav-collabse-img-src"] = "images/Home-Icon.png";
 }
 
 <div class="text-center">
-    <img src="data:image/png;base64,@Model.RDBUser.Avatar.ToBase64()" alt="">
     @foreach (var post in Model.Posts)
     {
         <h1>@post.Title</h1>   
     }
-
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
 </div>

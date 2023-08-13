@@ -1,33 +1,64 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Identity
+@using DistributedReddit.AuthDb
+@using DistributedReddit.Services
+
+@inject SignInManager<AuthUser> SignInManager
+@inject UserManager<AuthUser> UserManager
+@inject UserService UserService;
+@{
+    AuthUser authUser = null;
+    rdb_grpc.User rdbUser = null;
+    if (SignInManager.IsSignedIn(User)) {
+        authUser = await UserManager.GetUserAsync(User);
+        rdbUser = await UserService.GetUserAsync(authUser.Handle);
+    }
+}
+
+
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - DistributedReddit.Web</title>
+    <title>@ViewData["Title"]</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/DistributedReddit.Web.styles.css" asp-append-version="true" />
 </head>
+
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+    <header class="sticky-top">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3 p-0">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">DistributedReddit.Web</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+                <a class="navbar-brand" asp-area="" asp-page="/Index">
+                    <img src="~/images/Reddit-Icon.png" alt="Logo" width="35" height="35">
+                    <img src="~/images/Reddit-logo-text.svg" alt="Logo" width="70" height="32">
+                </a>
+                @if (SignInManager.IsSignedIn(User))
+                {
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
+                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                    <partial name="_LoginPartial" />
-                </div>
+                    </button>
+                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                        <ul class="navbar-nav flex-grow-1">
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center p-0" href="#" role="button" data-bs-toggle="dropdown"
+                                    aria-expanded="false">
+                                    <img src=@ViewData["Nav-collabse-img-src"] alt="Home" width="25" height="25"> <p class="m-0">@ViewData["Nav-collabse"]</p>
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#">Action</a></li>
+                                    <li><a class="dropdown-item" href="#">Another action</a></li>
+                                    <li><a class="dropdown-item" href="#">Something else here</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <partial name="_LoginPartial" />
+                    </div>
+                }
+                
             </div>
         </nav>
     </header>
@@ -39,7 +70,7 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2023 - DistributedReddit.Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; 2023 - DistributedReddit - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
@@ -47,4 +78,5 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
+
 </html>

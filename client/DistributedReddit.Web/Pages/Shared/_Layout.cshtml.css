@@ -46,3 +46,39 @@ button.accept-policy {
   white-space: nowrap;
   line-height: 60px;
 }
+
+
+.container {
+  display: flex;
+  flex-direction: column;
+}
+#main-header {
+  display: flex;
+  border: 3px solid aqua;
+  width: 80vw;
+  justify-content: center;
+}
+
+.main-container {
+  border: 10px solid red;
+  width: 80vw;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+main {
+  border: 4px solid green;
+  flex-basis: 600px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-right: 50px;
+}
+
+aside {
+  border: 4px solid yellow;
+}
+
+

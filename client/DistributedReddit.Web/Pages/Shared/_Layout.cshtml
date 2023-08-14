@@ -44,17 +44,10 @@
                     <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                         <ul class="navbar-nav flex-grow-1">
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle d-flex align-items-center p-0" href="#" role="button" data-bs-toggle="dropdown"
-                                    aria-expanded="false">
-                                    <img src=@ViewData["Nav-collabse-img-src"] alt="Home" width="25" height="25"> <p class="m-0">@ViewData["Nav-collabse"]</p>
-                                </a>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#">Action</a></li>
-                                    <li><a class="dropdown-item" href="#">Another action</a></li>
-                                    <li><a class="dropdown-item" href="#">Something else here</a></li>
-                                </ul>
+                                @await RenderSectionAsync("NavCollabse", required: false)
                             </li>
                         </ul>
+
                         <partial name="_LoginPartial" />
                     </div>
                 }

@@ -25,11 +25,15 @@ public class IndexModel : PageModel
         _userManager = userManager;
         _userService = userService;
     }
+    public User RdbUser { get; set; }
 
     public IEnumerable<Post> Posts { get; set; }
 
     public async Task OnGetAsync()
     {
+
+        var authUser = await _userManager.GetUserAsync(User);
+        RdbUser = await _userService.GetUserAsync(authUser.Handle);
 
 
         Posts = new List<Post>()

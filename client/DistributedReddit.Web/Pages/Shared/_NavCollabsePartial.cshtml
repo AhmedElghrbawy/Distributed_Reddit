@@ -1,10 +1,11 @@
-
+@model rdb_grpc.User
 <a class="nav-link dropdown-toggle d-flex align-items-center p-0" href="#" role="button" data-bs-toggle="dropdown"
             aria-expanded="false">
             <img src=@ViewData["Nav-collabse-img-src"] alt="Home" width="25" height="25"> <p class="m-0">@ViewData["Nav-collabse"]</p>
 </a>
 <ul class="dropdown-menu">
-    <li><a class="dropdown-item" href="#">Action</a></li>
-    <li><a class="dropdown-item" href="#">Another action</a></li>
-    <li><a class="dropdown-item" href="#">Something else here</a></li>
+    @foreach (var subredditHandle in Model.JoinedSubredditHandles.Concat(Model.AdminedSubredditHandles))
+    {   
+        <li><a class="dropdown-item" asp-page="/Subreddits/Index" asp-route-handle=@subredditHandle>r/@subredditHandle</a></li>
+    }
 </ul>

@@ -1,4 +1,5 @@
-﻿using Google.Protobuf;
+﻿using System.Transactions;
+using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Net.ClientFactory;
 using rdb_grpc;
@@ -23,12 +24,24 @@ public class SubredditTransactionManager
 
     public async Task<Subreddit?> CreateSubredditAsync(Subreddit subreddit)
     {
-        int shardNumber = GetSubreddditShardNumber(subreddit, _config.NumberOfShards);
-        var clients = new List<ClientBase>();
+        var txId = Guid.NewGuid();
+        int subrdditShardNumber = GetSubreddditShardNumber(subreddit, _config.NumberOfShards);
+        int adminShardNumber = UserTransactionManager.GetUserShardNumber(new User {Handle = subreddit.AdminsHandles[0]}, _config.NumberOfShards);
+
+        var subredditClients = new List<ClientBase>();
         for (int i = 0; i < _config.NumberOfReplicas; i++)
         {
-            clients.Add(_grpcClientFactory.CreateClient<SubredditGRPC.SubredditGRPCClient>(
-                $"{nameof(SubredditGRPC.SubredditGRPCClient)}/S{shardNumber}_R{i}"
+            subredditClients.Add(_grpcClientFactory.CreateClient<SubredditGRPC.SubredditGRPCClient>(
+                $"{nameof(SubredditGRPC.SubredditGRPCClient)}/S{subrdditShardNumber}_R{i}"
+            ));
+        }
+
+
+        var adminClients = new List<ClientBase>();
+        for (int i = 0; i < _config.NumberOfReplicas; i++)
+        {
+            adminClients.Add(_grpcClientFactory.CreateClient<UserGRPC.UserGRPCClient>(
+                $"{nameof(UserGRPC.UserGRPCClient)}/S{adminShardNumber}_R{i}"
             ));
         }
 
@@ -38,10 +51,32 @@ public class SubredditTransactionManager
             MessageInfo = new MessageInfo
             {
                 Id = Guid.NewGuid().ToString(),
+            },
+            SubredditShard = subrdditShardNumber,
+            UserShard = adminShardNumber,
+            TwopcInfo = new TwoPhaseCommitInfo 
+            {
+                TransactionId = txId.ToString()
             }
         };
 
-        static async Task<IMessage> execFunc(IMessage inputMessage, ClientBase client, CancellationToken cancellationToken)
+        var memberShipInfo = new UserSubredditMembership
+        {
+            SubredditHandle = subreddit.Handle,
+            UserHandle = subreddit.AdminsHandles[0],
+            MessageInfo = new MessageInfo
+            {
+                Id = Guid.NewGuid().ToString()
+            },
+            SubredditShard = subrdditShardNumber,
+            UserShard = adminShardNumber,
+            TwopcInfo = new TwoPhaseCommitInfo 
+            {
+                TransactionId = txId.ToString()
+            }
+        };
+
+        static async Task<IMessage> subredditExecFunc(IMessage inputMessage, ClientBase client, CancellationToken cancellationToken)
         {
             var SubredditClient = (SubredditGRPC.SubredditGRPCClient)client;
             var inputSubredditInfo = (SubredditInfo)inputMessage;
@@ -49,9 +84,24 @@ public class SubredditTransactionManager
             return (IMessage)await SubredditClient.CreateSubredditAsync(inputSubredditInfo, cancellationToken: cancellationToken);
         }
 
-        var txInfo = new TransactionInfo(Guid.NewGuid(), shardNumber, clients, execFunc, subredditInfo);
+        static async Task<IMessage> adminExecFunc(IMessage inputMessage, ClientBase client, CancellationToken cancellationToken)
+        {
+            var userClient = (UserGRPC.UserGRPCClient)client;
+            var membershipInfo = (UserSubredditMembership)inputMessage;
 
-        var result = await _txManager.SubmitTransactionsAsync(new TransactionInfo[] {txInfo});
+            return (IMessage)await userClient.JoinSubredditAsync(membershipInfo, cancellationToken: cancellationToken);
+        }
+
+        var subredditTxInfo = new TransactionInfo(txId, subrdditShardNumber, subredditClients, subredditExecFunc, subredditInfo);
+        var adminTxInfo = new TransactionInfo(txId, adminShardNumber, adminClients, adminExecFunc, memberShipInfo);
+
+        var txs = new List<TransactionInfo> (){subredditTxInfo};
+
+        if (subrdditShardNumber != adminShardNumber)
+        {
+            txs.Add(adminTxInfo);
+        }
+        var result = await _txManager.SubmitTransactionsAsync(txs.ToArray());
 
         return result.Length == 1 ? (Subreddit) result[0] : null;
     }

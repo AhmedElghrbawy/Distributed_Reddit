@@ -129,6 +129,9 @@ message PostInfo {
 message SubredditInfo {
     Subreddit subreddit = 1;
     MessageInfo message_info = 2;
+    int32 user_shard = 3;
+    int32 subreddit_shard = 4;
+    TwoPhaseCommitInfo twopc_info = 5;
 }
 
 message UserInfo {

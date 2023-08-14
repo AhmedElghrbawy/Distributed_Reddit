@@ -4,6 +4,7 @@ import (
 	context "context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -75,6 +76,8 @@ func (ex *CreateSubredditExecuter) Execute(rdb *rdbServer) (interface{}, error) 
 	ctx, cancel := context.WithTimeout(context.Background(), DurationTO)
 	defer cancel()
 
+	isPreparedTx := ex.In_subreddit_info.SubredditShard != int32(rdb.shardNum) || ex.In_subreddit_info.UserShard != int32(rdb.shardNum)
+
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return false, errors.New("couldn't start create subreddit transaction")
@@ -121,21 +124,36 @@ func (ex *CreateSubredditExecuter) Execute(rdb *rdbServer) (interface{}, error) 
 		return false, err
 	}
 
-	// Commit the transaction.
-	if err = tx.Commit(); err != nil {
-		return false, errors.New("failed to commit create subreddit tx")
-	}
+	if isPreparedTx {
+		preparedTxId := fmt.Sprintf("%s-S%d_R%d", ex.In_subreddit_info.TwopcInfo.TransactionId, rdb.shardNum, rdb.replicaNum)
+		preparedTxRaw := fmt.Sprintf("PREPARE TRANSACTION '%s'", preparedTxId)
 
-	log.Printf("successfully commited tx for creating subreddit {Handle: %s}\n", ex.In_subreddit_info.Subreddit.Handle)
+		preparedStmt := RawStatement(preparedTxRaw)
+
+		_, err = preparedStmt.ExecContext(ctx, tx)
+
+		if err != nil {
+			log.Printf("failed to prepare create post tx for Subreddit {Handle: %s}.\n", ex.In_subreddit_info.Subreddit.Handle)
+			return false, err
+		}
+		tx.Commit()
+		log.Printf("successfully prepared tx for creating ubreddit {Handle: %s}\n", ex.In_subreddit_info.Subreddit.Handle)
+	} else {
+		// Commit the transaction.
+		if err = tx.Commit(); err != nil {
+			return false, errors.New("failed to commit create subreddit tx")
+		}
+
+		log.Printf("successfully commited tx for creating subreddit {Handle: %s}\n", ex.In_subreddit_info.Subreddit.Handle)
+
+	}
 
 	return true, nil
 }
 
 // returns (*[]SubredditDTO, error): a slice of subreddit handles on this shard or error
 type GetSubredditsHandlesExecuter struct {
-	
 }
-
 
 func (ex *GetSubredditsHandlesExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 	db, err := sql.Open("postgres", rdb.dbConnectionStr)
@@ -146,13 +164,11 @@ func (ex *GetSubredditsHandlesExecuter) Execute(rdb *rdbServer) (interface{}, er
 
 	log.Printf("Preparing to execute GetSubreddits Handles\n")
 
-
 	stmt := SELECT(
 		Subreddits.Handle,
 	).FROM(Subreddits)
 
 	result := []SubredditDTO{}
-
 
 	err = stmt.Query(db, &result)
 
@@ -165,4 +181,3 @@ func (ex *GetSubredditsHandlesExecuter) Execute(rdb *rdbServer) (interface{}, er
 
 	return &result, nil
 }
-

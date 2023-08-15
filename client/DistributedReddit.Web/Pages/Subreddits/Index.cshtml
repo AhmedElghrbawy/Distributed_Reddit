@@ -4,5 +4,31 @@
     ViewData["Title"] = Model.Subreddit.Handle;
 }
 
+@section MainHeader {
+    <div class="d-flex">
+        <img src="data:image/jpg;base64, @Model.Subreddit.Avatar.ToBase64()" class="rounded-circle me-3" alt="Logo" width="80" height="80">
+        <div class="d-flex flex-column me-3">
+            <h2 >@Model.Subreddit.Title</h2>
+            <p class="text-muted">r/@Model.Subreddit.Handle</p>
+        </div>    
+    </div>
+
+    <div >
+        <form method="POST" class="d-flex align-items-center">
+            <input asp-for="Subreddit.Handle" value=@Model.Subreddit.Handle hidden>
+            @if(Model.RdbUser.JoinedSubredditHandles.Concat(Model.RdbUser.AdminedSubredditHandles).Contains(Model.Subreddit.Handle))
+            {
+                <button type="button" class="btn btn-outline-success rounded-lg me-2" style="width: 150px;">Joined</button>
+                <input type="image" src="/images/Leave-Icon.png" alt="Leave" asp-page-handler="Leave" width="30" title="Leave"/>
+            } 
+            else
+            {
+                <button type="submit" class="btn btn-outline-success rounded-lg" asp-page-handler="Join" style="width: 150px;">Join</button>
+            } 
+        </form>   
+    </div>
+    
+}
+
 
 

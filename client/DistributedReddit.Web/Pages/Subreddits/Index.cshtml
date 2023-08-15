@@ -21,7 +21,7 @@
             @if(Model.RdbUser.JoinedSubredditHandles.Concat(Model.RdbUser.AdminedSubredditHandles).Contains(Model.Subreddit.Handle))
             {
                 <button type="button" class="btn btn-outline-success rounded-lg me-2" style="width: 150px;">Joined</button>
-                <input type="image" src="/images/Leave-Icon.png" alt="Leave" asp-page-handler="Leave" width="30" title="Leave"/>
+                <input type="image" class="rounded-circle" src="/images/Leave-Icon.png" alt="Leave" asp-page-handler="Leave" width="30" title="Leave"/>
             } 
             else
             {
@@ -32,8 +32,53 @@
     
 }
 
+@section Aside {
+    <div class="d-flex flex-column border border-2 border-dark">
+        <div class="bg-primary d-flex p-2" style="height: 50px;">
+            <p class="mb-0 d-flex align-items-center text-light">About Community</p>
+        </div>
 
+
+        <p class="p-2" >
+            @Model.Subreddit.About
+        </p>
+
+        <div class="d-flex align-items-center justify-content-center">
+            <img src="/images/Calendar-Icon.png" class="me-3 ms-2" alt="Logo" width="15" height="15">
+            <p class="d-flex align-items-center mb-0 text-muted">Created @Model.Subreddit.CreatedAt.ToDateTime().ToString("dd/MM/yyyy")</p>
+        </div>
+        <div class="d-flex justify-content-center mt-2 mb-2">
+            <p class="d-flex align-items-center mb-0">
+                @{var numU = Model.Subreddit.AdminsHandles.Count+@Model.Subreddit.UsersHandles.Count;} 
+                @numU members
+            </p>
+        </div>
+        <div class="d-flex justify-content-center border border-dark p-2">
+            <button class="btn btn-primary" style="width: 200px;">Create Post</button>
+        </div>
+    </div>
+
+    <div class="d-flex flex-column border border-2 border-dark" style="margin-top: 10px;">
+        <div class="bg-primary d-flex p-2" style="height: 50px;">
+            <p class="mb-0 d-flex align-items-center text-light">Rules</p>
+        </div>
+        <p class="p-2" >
+            @Model.Subreddit.Rules
+        </p>
+    </div>
+    
+}
 
 @section NavCollabse {
     <partial name="_NavCollabsePartial" model="Model.RdbUser"/>
 }
+
+
+<div class="card" style="width: 18rem;">
+  <img class="card-img-top" src="#" alt="Card image cap">
+  <div class="card-body">
+    <h5 class="card-title">Card title</h5>
+    <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+    <a href="#" class="btn btn-primary">Go somewhere</a>
+  </div>
+</div>

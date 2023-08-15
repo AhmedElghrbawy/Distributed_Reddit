@@ -4,6 +4,12 @@
             <img src=@ViewData["Nav-collabse-img-src"] alt="Home" width="25" height="25"> <p class="m-0">@ViewData["Nav-collabse"]</p>
 </a>
 <ul class="dropdown-menu">
+    <li class="d-flex align-items-center">
+        
+        <a class="dropdown-item" asp-page="/Subreddits/Create">
+         <img src="/images/CreateSubreddit-Icon.png" alt="Home" width="25" height="25"> Create Subreddit
+         </a>
+    </li>
     @foreach (var subredditHandle in Model.JoinedSubredditHandles.Concat(Model.AdminedSubredditHandles))
     {   
         <li><a class="dropdown-item" asp-page="/Subreddits/Index" asp-route-handle=@subredditHandle>r/@subredditHandle</a></li>

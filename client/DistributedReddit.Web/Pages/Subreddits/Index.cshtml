@@ -2,6 +2,8 @@
 @model DistributedReddit.Web.Pages.Subreddits.IndexModel
 @{
     ViewData["Title"] = Model.Subreddit.Handle;
+    ViewData["Nav-collabse"] = "r/" + Model.Subreddit.Handle;
+    ViewData["Nav-collabse-img-src"] = $"data:image/jpg;base64, {Model.Subreddit.Avatar.ToBase64()}";
 }
 
 @section MainHeader {
@@ -32,3 +34,6 @@
 
 
 
+@section NavCollabse {
+    <partial name="_NavCollabsePartial" model="Model.RdbUser"/>
+}

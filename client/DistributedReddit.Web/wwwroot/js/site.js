@@ -2,3 +2,9 @@
 // for details on configuring this project to bundle and minify static web assets.
 
 // Write your JavaScript code.
+
+let main_header = document.getElementById("main-header");
+
+if (!main_header.innerHTML.trim()) {
+    main_header.remove()
+}

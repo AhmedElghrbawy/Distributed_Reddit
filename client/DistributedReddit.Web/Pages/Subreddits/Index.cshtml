@@ -21,7 +21,10 @@
             @if(Model.RdbUser.JoinedSubredditHandles.Concat(Model.RdbUser.AdminedSubredditHandles).Contains(Model.Subreddit.Handle))
             {
                 <button type="button" class="btn btn-outline-success rounded-lg me-2" style="width: 150px;">Joined</button>
-                <input type="image" class="rounded-circle" src="/images/Leave-Icon.png" alt="Leave" asp-page-handler="Leave" width="30" title="Leave"/>
+                @* <input type="image"  src="/images/Leave-Icon.svg" alt="Leave" asp-page-handler="Leave" width="30" title="Leave"/> *@
+                <button type="submit" class="btn btn-danger" asp-page-handler="Leave">
+                    <i class="fa-solid fa-person-walking-arrow-right"></i>
+                </button>
             } 
             else
             {
@@ -33,7 +36,7 @@
 }
 
 @section Aside {
-    <div class="d-flex flex-column border border-2 border-dark">
+    <div class="d-flex flex-column border border-1 border-dark rounded">
         <div class="bg-primary d-flex p-2" style="height: 50px;">
             <p class="mb-0 d-flex align-items-center text-light">About Community</p>
         </div>
@@ -53,12 +56,12 @@
                 @numU members
             </p>
         </div>
-        <div class="d-flex justify-content-center border border-dark p-2">
+        <div class="d-flex justify-content-center border border-dark border-bottom-0 border-left-0 border-right-0 p-2">
             <button class="btn btn-primary" style="width: 200px;">Create Post</button>
         </div>
     </div>
 
-    <div class="d-flex flex-column border border-2 border-dark" style="margin-top: 10px;">
+    <div class="d-flex flex-column border border-1 border-dark rounded" style="margin-top: 10px;">
         <div class="bg-primary d-flex p-2" style="height: 50px;">
             <p class="mb-0 d-flex align-items-center text-light">Rules</p>
         </div>

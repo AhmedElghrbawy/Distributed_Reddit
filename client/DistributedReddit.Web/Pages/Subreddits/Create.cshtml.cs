@@ -55,7 +55,7 @@ class CreateModel : PageModel
         
         await _subredditService.CreateSubredditAsync(Subreddit);
 
-        return RedirectToPage("/Index");
+        return RedirectToPage("Index", new {handle = Subreddit.Handle});
     }
 
 

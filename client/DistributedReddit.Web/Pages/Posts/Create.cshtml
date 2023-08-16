@@ -1,0 +1,52 @@
+﻿@page "{routedSubredditHandle?}"
+@model DistributedReddit.Web.Pages.Posts.CreateModel;
+
+@{
+    ViewData["Title"] = "Create A Post";
+}
+
+<h1>Create Post</h1>
+
+
+
+<div class>
+    <div class>
+        <form method="post" enctype="multipart/form-data">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group mb-3">
+                <label asp-for="Post.Title" class="control-label"></label>
+                <input asp-for="Post.Title" class="form-control" />
+                <span asp-validation-for="Post.Title" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="Post.Content" class="control-label"></label>
+                <textarea asp-for="Post.Content" class="form-control" rows="4"> </textarea>
+                <span asp-validation-for="Post.Content" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="ImageFile" class="control-label"></label>
+                <input asp-for="ImageFile" class="form-control" />
+                <span asp-validation-for="ImageFile" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="Post.SubredditHandle" class="control-label"></label>
+                <select asp-for="Post.SubredditHandle" asp-items="Model.UserSubreddits"></select> 
+                <span asp-validation-for="UserSubreddits" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="Post.IsPinned" class="control-label"></label>
+                <input type="checkbox" name="Post.IsPinned" value="false" onchange="this.value=this.checked" class="form-check-input"/>
+                <span asp-validation-for="Post.IsPinned" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+

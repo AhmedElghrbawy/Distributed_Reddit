@@ -71,12 +71,12 @@ button.accept-policy {
 }
 
 main {
-  border: 4px solid green;
+  /* border: 4px solid green; */
   flex-basis: 600px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  /* justify-content: space-between; */
   margin-right: 50px;
 }
 

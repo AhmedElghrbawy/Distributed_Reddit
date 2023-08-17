@@ -6,6 +6,25 @@
     ViewData["Nav-collabse-img-src"] = $"data:image/jpg;base64, {Model.Subreddit.Avatar.ToBase64()}";
 }
 
+
+<div class="d-flex border border-1 border-dark rounded w-100 align-items-center">
+    <img class="ms-2" src="data:image/jpg;base64, @Model.RdbUser.Avatar.ToBase64()" alt="Logo" width="35" height="35">
+    <a style="flex-grow: 4;" class="p-2" asp-page="/Posts/Create" asp-route-routedSubredditHandle=@Model.Subreddit.Handle>
+        <button type="button" class="btn btn-outline-dark w-100" >Create Post</button>
+    </a>
+</div>
+
+
+@foreach (var post in Model.Subreddit.Posts)
+{
+    <partial name="_PostPartial" model="post"/>
+}
+
+
+
+
+
+
 @section MainHeader {
     <div class="d-flex">
         <img src="data:image/jpg;base64, @Model.Subreddit.Avatar.ToBase64()" class="rounded-circle me-3" alt="Logo" width="80" height="80">
@@ -77,7 +96,7 @@
 }
 
 
-<div class="card" style="width: 18rem;">
+<div class="card mt-5 w-100" style="width: 18rem;">
   <img class="card-img-top" src="#" alt="Card image cap">
   <div class="card-body">
     <h5 class="card-title">Card title</h5>

@@ -61,7 +61,8 @@ func (ex *GetPostExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 			PostTags.TagName,
 		).FROM(SubredditPosts.
 			LEFT_JOIN(SubredditComments, SubredditPosts.ID.EQ(SubredditComments.PostID)).
-			LEFT_JOIN(PostTags, SubredditPosts.ID.EQ(PostTags.PostID)),
+			LEFT_JOIN(PostTags, SubredditPosts.ID.EQ(PostTags.PostID)).
+			LEFT_JOIN(Subreddits, SubredditPosts.SubredditHandle.EQ(Subreddits.Handle)),
 		).WHERE(
 			CAST(table.SubredditPosts.ID).AS_TEXT().EQ(String(ex.In_post_info.Post.Id)),
 		)
@@ -108,7 +109,7 @@ func (ex *CreatePostExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 		NumberOfVotes:   ex.In_post_info.Post.NumberOfVotes,
 		IsPinned:        ex.In_post_info.Post.IsPinned,
 		OwnerHandle:     ex.In_post_info.Post.OwnerHandle,
-		SubredditHandle: ex.In_post_info.Post.SubredditHandle,
+		SubredditHandle: ex.In_post_info.Post.Subreddit.Handle,
 	}
 
 	subredditPostInsertStmt := SubredditPosts.INSERT(SubredditPosts.AllColumns).
@@ -123,7 +124,7 @@ func (ex *CreatePostExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 		NumberOfVotes:   ex.In_post_info.Post.NumberOfVotes,
 		IsPinned:        ex.In_post_info.Post.IsPinned,
 		OwnerHandle:     ex.In_post_info.Post.OwnerHandle,
-		SubredditHandle: ex.In_post_info.Post.SubredditHandle,
+		SubredditHandle: ex.In_post_info.Post.Subreddit.Handle,
 	}
 
 	userPostInsertStmt := UserPosts.INSERT(UserPosts.AllColumns).

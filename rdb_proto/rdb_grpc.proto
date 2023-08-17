@@ -46,7 +46,7 @@ message Post {
     int32 number_of_votes = 6;
     bool is_pinned = 7;
     string owner_handle = 8;
-    string subreddit_handle = 9;
+    Subreddit subreddit = 9; // only contains subreddit_handle and a nullable subreddit_avatar
     repeated Comment comments = 10;
     repeated string tags = 11;
 }

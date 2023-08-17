@@ -4,6 +4,7 @@ import (
 	"github.com/ahmedelghrbawy/replicated_db/pkg/jet_db/public/model"
 	"github.com/ahmedelghrbawy/replicated_db/pkg/jet_db/public/table"
 	pb "github.com/ahmedelghrbawy/replicated_db/pkg/rdb_grpc"
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -47,8 +48,9 @@ type TagDTO struct {
 
 type PostDTO struct {
 	model.SubredditPosts
-	Comments []CommentDTO
-	Tags     []model.PostTags
+	Comments  []CommentDTO
+	Tags      []model.PostTags
+	Subreddit model.Subreddits
 }
 
 // since PostDTO defines its embedded post as SubredditPosts model,
@@ -59,14 +61,20 @@ var AliasedUserPosts = table.UserPosts.AS("SubredditPosts")
 
 func (post_dto *PostDTO) mapToProto() *pb.Post {
 	proto := &pb.Post{
-		Id:              post_dto.ID.String(),
-		Title:           post_dto.Title,
-		Content:         post_dto.Content,
-		CreatedAt:       timestamppb.New(post_dto.CreatedAt),
-		NumberOfVotes:   post_dto.NumberOfVotes,
-		IsPinned:        post_dto.IsPinned,
-		OwnerHandle:     post_dto.OwnerHandle,
-		SubredditHandle: post_dto.SubredditHandle,
+		Id:            post_dto.ID.String(),
+		Title:         post_dto.Title,
+		Content:       post_dto.Content,
+		CreatedAt:     timestamppb.New(post_dto.CreatedAt),
+		NumberOfVotes: post_dto.NumberOfVotes,
+		IsPinned:      post_dto.IsPinned,
+		OwnerHandle:   post_dto.OwnerHandle,
+	}
+	proto.Subreddit = &pb.Subreddit{}
+	proto.Subreddit.Handle = post_dto.SubredditHandle
+	if post_dto.Subreddit.Avatar == nil {
+		proto.Subreddit.Avatar = []byte("")
+	} else {
+		proto.Subreddit.Avatar = post_dto.Subreddit.Avatar
 	}
 
 	if post_dto.Image == nil {
@@ -101,8 +109,14 @@ func (sub_dto *SubredditDTO) mapToProto() *pb.Subreddit {
 		CreatedAt: timestamppb.New(sub_dto.CreatedAt),
 	}
 
-	for _, post := range sub_dto.Posts {
-		proto.Posts = append(proto.Posts, post.mapToProto())
+	// because of jetdb mapping convention, it will create a default dump post for subreddits with no posts
+	// because of the circulal dto between post and subreddit
+	if len(sub_dto.Posts) == 1 && sub_dto.Posts[0].ID == uuid.Nil {
+		proto.Posts = make([]*pb.Post, 0)
+	} else {
+		for _, post := range sub_dto.Posts {
+			proto.Posts = append(proto.Posts, post.mapToProto())
+		}
 	}
 
 	for _, user := range sub_dto.JoinedUsers {

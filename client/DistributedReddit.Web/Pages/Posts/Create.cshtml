@@ -29,8 +29,8 @@
                 <span asp-validation-for="ImageFile" class="text-danger"></span>
             </div>
             <div class="form-group mb-3">
-                <label asp-for="Post.SubredditHandle" class="control-label"></label>
-                <select asp-for="Post.SubredditHandle" asp-items="Model.UserSubreddits"></select> 
+                <label asp-for="Post.Subreddit.Handle" class="control-label"></label>
+                <select asp-for="Post.Subreddit.Handle" asp-items="Model.UserSubreddits"></select> 
                 <span asp-validation-for="UserSubreddits" class="text-danger"></span>
             </div>
             <div class="form-group mb-3">

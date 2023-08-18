@@ -58,7 +58,7 @@ func (ex *GetPostExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 	} else {
 		stmt = SELECT(
 			SubredditPosts.AllColumns, SubredditComments.AllColumns,
-			PostTags.TagName,
+			PostTags.TagName, Subreddits.Avatar,
 		).FROM(SubredditPosts.
 			LEFT_JOIN(SubredditComments, SubredditPosts.ID.EQ(SubredditComments.PostID)).
 			LEFT_JOIN(PostTags, SubredditPosts.ID.EQ(PostTags.PostID)).
@@ -239,10 +239,11 @@ func (ex *GetPostsExecuter) Execute(rdb *rdbServer) (interface{}, error) {
 
 	stmt := SELECT(
 		SubredditPosts.AllColumns, SubredditComments.AllColumns,
-		PostTags.TagName,
+		PostTags.TagName, Subreddits.Avatar,
 	).FROM(SubredditPosts.
 		LEFT_JOIN(SubredditComments, SubredditPosts.ID.EQ(SubredditComments.PostID)).
-		LEFT_JOIN(PostTags, SubredditPosts.ID.EQ(PostTags.PostID)),
+		LEFT_JOIN(PostTags, SubredditPosts.ID.EQ(PostTags.PostID)).
+		LEFT_JOIN(Subreddits, SubredditPosts.SubredditHandle.EQ(Subreddits.Handle)),
 	)
 
 	result := []PostDTO{}

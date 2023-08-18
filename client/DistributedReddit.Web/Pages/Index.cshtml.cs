@@ -35,33 +35,6 @@ public class IndexModel : PageModel
         var authUser = await _userManager.GetUserAsync(User);
         RdbUser = await _userService.GetUserAsync(authUser.Handle);
 
-
-        Posts = new List<Post>()
-        {
-            new Post {Title = "Hello"},
-            new Post {Title = "Goodbye"},
-            new Post {Title = "Yolooo"},
-            new Post {Title = "Sayed"},
-            new Post {Title = "Kappa"},
-            new Post {Title = "Kappa"},
-            new Post {Title = "Kappa"},
-            new Post {Title = "Kappa"},
-            new Post {Title = "Kappa"},
-            new Post {Title = "Kappa"},
-            new Post {Title = "Kappa"},
-            new Post {Title = "Kappa"},
-            new Post {Title = "Kappa"},
-            new Post {Title = "Kappa"},
-            new Post {Title = "Kappa"},
-            new Post {Title = "Kappa"},
-            new Post {Title = "Kappa"},
-            new Post {Title = "Kappa"},
-            new Post {Title = "Kappa"},
-            new Post {Title = "Kappa"},
-            new Post {Title = "Kappa"},
-            new Post {Title = "Kappa"},
-            new Post {Title = "Kappa"},
-            new Post {Title = "Kappa"},
-        };
+        Posts = await _postService.GetPostsAsync();
     }
 }

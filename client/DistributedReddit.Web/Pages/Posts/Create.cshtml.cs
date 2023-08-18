@@ -77,7 +77,7 @@ public class CreateModel : PageModel
 
         await _postService.CreatePostAsync(Post);
 
-        return RedirectToPage("/Index");
+        return RedirectToPage("/Subreddits/Index", new {handle = Post.Subreddit.Handle});
     }
 
 }

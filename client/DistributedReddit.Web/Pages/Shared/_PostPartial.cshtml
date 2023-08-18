@@ -23,6 +23,9 @@
         <div class="mt-2">
             <p>@Model.Title</p>
         </div>
+        <div class="mt-2 text-muted">
+            <p>@Model.Content</p>
+        </div>
         @if (!Model.Image.IsEmpty)
         {
             <img class="w-100" src="data:image/jpg;base64, @Model.Image.ToBase64()" alt="Logo" style="max-height: 700px;">

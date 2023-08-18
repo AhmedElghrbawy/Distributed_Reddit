@@ -6,14 +6,41 @@
     ViewData["Nav-collabse-img-src"] = "images/Home-Icon.png";
 }
 
-<div class="text-center">
-    @foreach (var post in Model.Posts)
-    {
-        <h1>@post.Title</h1>   
-    }
+<div class="d-flex border border-1 border-dark rounded w-100 align-items-center">
+    <img class="ms-2" src="data:image/jpg;base64, @Model.RdbUser.Avatar.ToBase64()" alt="Logo" width="35" height="35">
+    <a style="flex-grow: 4;" class="p-2" asp-page="/Posts/Create">
+        <button type="button" class="btn btn-outline-dark w-100" >Create Post</button>
+    </a>
 </div>
+
+@foreach (var post in Model.Posts)
+{
+    <partial name="_PostPartial" model="post"/>
+}
 
 
 @section NavCollabse {
     <partial name="_NavCollabsePartial" model="Model.RdbUser"/>
+}
+
+@section Aside {
+    <div class="d-flex flex-column border border-1 border-dark rounded sticky-top" style="top: 70px;">
+        <img class="w-100 mb-4" src="/images/Reddit-Cover.jpg" alt="Logo" height="35">
+
+        <div class="d-flex">
+            <img class="ms-2 me-2" src="data:image/jpg;base64, @Model.RdbUser.Avatar.ToBase64()" alt="Logo" width="35" height="35">
+            <p class="m-0 mt-1 font-weight-bold">Home</p>
+        </div>
+
+        <p class="ms-2 me-2 mt-2 border-bottom ">Your personal Reddit frontpage. Come here to check in with your favorite communities.</p>
+
+        
+        
+        <div class="d-flex justify-content-center border-dark border-bottom-0 border-left-0 border-right-0 p-2">
+            <a class="btn btn-primary rounded-pill" style="width: 230px;" asp-page="/Posts/Create">Create Post</a>
+        </div>
+        <div class="d-flex justify-content-center border-dark border-bottom-0 border-left-0 border-right-0 p-2">
+            <a class="btn btn-light rounded-pill" style="width: 230px;" asp-page="/Subreddits/Create">Create Community</a>
+        </div>
+    </div>
 }

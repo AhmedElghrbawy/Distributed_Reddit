@@ -18,7 +18,9 @@
                 <img src="data:image/jpg;base64, @Model.Subreddit.Avatar.ToBase64()" class="rounded-circle me-2" alt="Logo" width="20" height="20">
             }
             <a class="link-secondary" asp-page="/Subreddits/Index" asp-route-handle=@Model.Subreddit.Handle>r/@Model.Subreddit.Handle</a>
-            <p class="m-0 ms-2 text-muted">Posted by u/@Model.OwnerHandle @Model.CreatedAt.ToDateTime().ToString("dd/MM/yyyy")</p>
+            <a asp-page="/Posts/Index" asp-route-id=@Model.Id asp-route-SubredditHandle=@Model.Subreddit.Handle style="text-decoration: none;">
+                <p class="m-0 ms-2 text-muted">Posted by u/@Model.OwnerHandle @Model.CreatedAt.ToDateTime().ToString("dd/MM/yyyy")</p>
+            </a>
         </div>
         <div class="mt-2">
             <p>@Model.Title</p>
@@ -32,7 +34,7 @@
         }
 
         <div class="d-flex mt-3 align-items-center">
-            <a href="" class="link-dark" style="text-decoration: none;"><i class="fa-regular fa-message"></i> @Model.Comments.Count comments</a>
+            <a asp-page="/Posts/Index" asp-route-id=@Model.Id asp-route-SubredditHandle=@Model.Subreddit.Handle class="link-dark" style="text-decoration: none;"><i class="fa-regular fa-message"></i> @Model.Comments.Count comments</a>
         </div>
     </div>
 

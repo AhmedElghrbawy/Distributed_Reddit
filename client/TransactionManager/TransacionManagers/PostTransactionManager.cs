@@ -80,7 +80,7 @@ public class PostTransactionManager
     }
 
 
-    public async Task<Post?> GetPostAsync(Guid id, string subredditHandle, string ownerHandle)
+    public async Task<Post?> GetPostAsync(Guid id, string subredditHandle)
     {
         int subredditShard = SubredditTransactionManager.GetSubreddditShardNumber(new Subreddit{Handle = subredditHandle}, _config.NumberOfShards);
         
@@ -100,7 +100,7 @@ public class PostTransactionManager
                 Id = Guid.NewGuid().ToString(),
             },
             SubredditShard = subredditShard,
-            UserShard = 0, 
+            UserShard = -1, 
         };
 
         static async Task<IMessage> execFunc(IMessage inputMessage, ClientBase client, CancellationToken cancellationToken)

@@ -17,9 +17,9 @@ public class PostService
         return await _txManager.CreatePostAsync(post);
     }
 
-    public async Task<Post?> GetPostAsync(Guid postId, string subredditHandle, string userHandle)
+    public async Task<Post?> GetPostAsync(Guid postId, string subredditHandle)
     {
-        return await _txManager.GetPostAsync(postId, subredditHandle, userHandle);
+        return await _txManager.GetPostAsync(postId, subredditHandle);
     }
 
     public async Task<Post?> UpVote(Post post)

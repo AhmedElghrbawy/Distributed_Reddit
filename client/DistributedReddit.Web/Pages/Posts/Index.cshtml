@@ -1,0 +1,9 @@
+﻿@page "{id}"
+@model DistributedReddit.Web.Pages.Posts.IndexModel
+
+
+@{
+    ViewData["Title"] = Model.Post.Title;
+}
+
+<partial name="_PostPartial" model="Model.Post"/>
